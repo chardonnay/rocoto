@@ -96,6 +96,13 @@ public class WsEndpoint extends Endpoint {
                         @Override
                         public void send(String event, Map<String, Object> data) throws IOException {
                             sendEvent(session, subscriptionId, event, data);
+                            boolean credentialsGone = event.equals("error") && Integer.valueOf(401).equals(data.get("status"));
+                            if (event.equals("end") || credentialsGone) {
+                                // The identity of a WebSocket session comes from its handshake. When it is no
+                                // longer valid, or has to be proven again, the whole connection goes - otherwise
+                                // the client could simply re-subscribe without authenticating.
+                                WsEndpoint.close(session, CloseCodes.VIOLATED_POLICY, "Authenticate again");
+                            }
                         }
 
                         @Override
