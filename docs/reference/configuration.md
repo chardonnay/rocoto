@@ -111,6 +111,7 @@ stream:
   maxSubscriptions: 200
   maxSubscriptionsPerUser: 20
   minIntervalMillis: 500
+  maxDurationSeconds: 3600      # a stream ends after this time and the client reconnects; 0 = unlimited
   threads: 2
 
 compat:
@@ -140,9 +141,13 @@ policy:
       mbean: "java.lang:type=Memory"           # ObjectName or pattern
       operations: [gc]                         # globs; omit for all operations
     - roles: [rocoto-admin]
-      allow: [write]
+      allow: [exec]
       mbean: "java.util.logging:type=Logging"
-      attributes: ["*"]
+      operations: [setLoggerLevel]
+    - roles: [rocoto-admin]
+      allow: [write]
+      mbean: "java.lang:type=Memory"
+      attributes: [Verbose]                    # globs; omit for all attributes
     - deny: [read]                             # deny rules may omit roles = everybody
       mbean: "java.lang:type=Runtime"
       attributes: [SystemProperties, InputArguments]

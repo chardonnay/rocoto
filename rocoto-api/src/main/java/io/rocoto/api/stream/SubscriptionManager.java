@@ -32,8 +32,11 @@ import io.rocoto.security.RequestPipeline;
  * Runs all push subscriptions (SSE and WebSocket) on a small shared scheduler.
  *
  * <p>Security properties: every poll goes through the request pipeline with the subscriber's
- * identity, so a policy or credential change takes effect on a running stream; the number of
- * subscriptions is bounded globally and per user; the polling interval has a lower bound.
+ * identity; before every poll the identity is re-validated, so removing a built-in user,
+ * revoking or expiring an API token or changing its roles ends the stream; streams of identities
+ * that cannot be re-validated (container, JWT, mTLS) end after {@code stream.maxDurationSeconds}
+ * and the client has to reconnect and authenticate again; the number of subscriptions is bounded
+ * globally and per user; the polling interval has a lower bound.
  */
 public final class SubscriptionManager implements AutoCloseable {
 
@@ -44,13 +47,18 @@ public final class SubscriptionManager implements AutoCloseable {
     private final int maxTotal;
     private final int maxPerUser;
     private final long minIntervalMillis;
+    private final long maxDurationMillis;
+    private final java.util.function.Predicate<io.rocoto.security.RocotoIdentity> identityValid;
     private final ScheduledExecutorService scheduler;
     private final Set<Subscription> active = ConcurrentHashMap.newKeySet();
     private final Map<String, AtomicInteger> perUser = new ConcurrentHashMap<>();
 
     /** @param stream the {@code stream} section of rocoto.yaml */
-    public SubscriptionManager(RequestPipeline pipeline, Config stream) {
+    public SubscriptionManager(RequestPipeline pipeline, Config stream,
+            java.util.function.Predicate<io.rocoto.security.RocotoIdentity> identityValid) {
         this.pipeline = pipeline;
+        this.identityValid = identityValid;
+        this.maxDurationMillis = Math.max(0, stream.longValue("maxDurationSeconds", 3600)) * 1000;
         this.maxTotal = stream.integer("maxSubscriptions", 200);
         this.maxPerUser = stream.integer("maxSubscriptionsPerUser", 20);
         this.minIntervalMillis = Math.max(100, stream.longValue("minIntervalMillis", 500));
@@ -123,6 +131,7 @@ public final class SubscriptionManager implements AutoCloseable {
         private final ValueConverter converter = pipeline.converter().build();
         private volatile ScheduledFuture<?> future;
         private volatile AutoCloseable notificationHandle;
+        private final long started = System.currentTimeMillis();
         private String lastPayload;
         private long lastSent = System.currentTimeMillis();
 
@@ -147,6 +156,15 @@ public final class SubscriptionManager implements AutoCloseable {
                 return;
             }
             try {
+                if (!identityValid.test(ctx.identity())) {
+                    fail(401, "Credentials are no longer valid");
+                    return;
+                }
+                if (maxDurationMillis > 0 && System.currentTimeMillis() - started > maxDurationMillis) {
+                    emit("end", Map.of("reason", "maximum stream duration reached - reconnect"));
+                    cancel();
+                    return;
+                }
                 if (!spec.attributes().isEmpty()) {
                     poll();
                 }
@@ -198,7 +216,11 @@ public final class SubscriptionManager implements AutoCloseable {
             if (cancelled.get()) {
                 return;
             }
-            // Re-check on delivery: permissions may have changed since the listener was registered.
+            // Re-check on delivery: the listener was registered some time ago.
+            if (!identityValid.test(ctx.identity())) {
+                fail(401, "Credentials are no longer valid");
+                return;
+            }
             if (!pipeline.policy().decide(ctx.identity(),
                     Target.read(spec.mbean(), RequestPipeline.NOTIFICATIONS)).allowed()) {
                 fail(403, "Access denied by policy");

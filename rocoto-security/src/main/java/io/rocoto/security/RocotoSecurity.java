@@ -76,6 +76,31 @@ public final class RocotoSecurity implements AutoCloseable {
                 auth.string("container.challenge", "Basic realm=\"Rocoto\", charset=\"UTF-8\""));
     }
 
+    /**
+     * Whether credentials that were valid when a long-running stream started are still valid:
+     * the built-in user or API token still exists, has not expired and carries the same roles.
+     * Identities established by other mechanisms (container, JWT, mTLS) cannot be re-validated
+     * without the original request; their streams are bounded by {@code stream.maxDurationSeconds}.
+     */
+    public boolean stillValid(RocotoIdentity identity) {
+        if (builtin == null) {
+            return true;
+        }
+        switch (identity.source()) {
+            case "basic": {
+                var user = builtin.store().user(identity.name());
+                return user != null && user.roles().equals(identity.roles());
+            }
+            case "token": {
+                var token = builtin.store().token(identity.name().substring("token:".length()));
+                return token != null && token.roles().equals(identity.roles())
+                        && (token.expires() == null || java.time.Instant.now().isBefore(token.expires()));
+            }
+            default:
+                return true;
+        }
+    }
+
     public RequestPipeline pipeline(MBeanAccess access) {
         return new RequestPipeline(access, policy, masker, audit);
     }

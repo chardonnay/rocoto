@@ -104,7 +104,7 @@ public final class TlsSelfProbe implements AutoCloseable {
         Instant expiry = r.earliestExpiry();
         long now = Instant.now().getEpochSecond();
         if (expiry != null) {
-            families.add(gauge("rocoto_tls_cert_expiry_seconds", "Seconds until the first certificate of the chain expires",
+            families.add(gauge("rocoto_tls_cert_expiry_seconds", "Seconds until the earliest expiry of any certificate in the chain",
                     Map.of(), expiry.getEpochSecond() - now));
         }
         String status = !r.stapled() ? "none" : r.ocsp() == null || r.ocsp().certStatus() == null ? "unknown"

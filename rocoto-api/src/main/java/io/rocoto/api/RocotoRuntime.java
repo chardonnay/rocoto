@@ -54,7 +54,7 @@ public final class RocotoRuntime implements AutoCloseable {
                 : null;
         this.otlp = metrics == null ? null : OtlpExporter.start(metricsConfig.sub("otlp"),
                 OutboundTls.context(config.sub("tls.outbound")), metrics, pipeline);
-        this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"));
+        this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"), security::stillValid);
         this.tlsProbe = TlsSelfProbe.start(config.sub("tls.selfProbe"));
     }
 

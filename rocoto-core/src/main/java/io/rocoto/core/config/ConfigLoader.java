@@ -50,12 +50,26 @@ public final class ConfigLoader {
         try (InputStream in = classLoader.getResourceAsStream("rocoto.yaml")) {
             if (in != null) {
                 return new Loaded(parse(new String(in.readAllBytes(), StandardCharsets.UTF_8)),
-                        "classpath:rocoto.yaml", null);
+                        "classpath:rocoto.yaml", serverConfigDirectory());
             }
         } catch (IOException e) {
             throw new ConfigException("Cannot read classpath:rocoto.yaml", e);
         }
-        return new Loaded(Config.empty(), "built-in defaults", null);
+        return new Loaded(Config.empty(), "built-in defaults", serverConfigDirectory());
+    }
+
+    /**
+     * Without a rocoto.yaml, relative paths (the user store) still belong into the server's
+     * configuration directory rather than into whatever the working directory happens to be.
+     */
+    private static Path serverConfigDirectory() {
+        for (Path candidate : candidates()) {
+            Path dir = candidate.toAbsolutePath().getParent();
+            if (dir != null && Files.isDirectory(dir)) {
+                return dir;
+            }
+        }
+        return null;
     }
 
     private static String explicitLocation() {

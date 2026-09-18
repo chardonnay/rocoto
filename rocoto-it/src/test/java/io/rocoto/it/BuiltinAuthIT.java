@@ -305,6 +305,39 @@ class BuiltinAuthIT {
     }
 
     @Test
+    void revokingATokenEndsItsRunningStream() throws Exception {
+        java.nio.file.Path users = server.dir.resolve("rocoto-users.yaml");
+        String original = java.nio.file.Files.readString(users);
+        io.rocoto.security.auth.ApiTokens.Generated temp = io.rocoto.security.auth.ApiTokens.generate("temp");
+        java.nio.file.Files.writeString(users, original
+                + "  - { id: temp, hash: \"" + temp.storedHash() + "\", roles: [rocoto-reader] }\n");
+        touch(users, 30);
+        Thread.sleep(2200); // the user store checks for changes every two seconds
+
+        HttpRequest request = HttpRequest.newBuilder(server.uri(
+                "/api/v1/subscribe?mbean=java.lang:type=Runtime&attribute=Uptime&interval=100"))
+                .header("Authorization", "Bearer " + temp.token()).timeout(Duration.ofSeconds(30)).build();
+        HttpResponse<Stream<String>> response = HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofLines());
+        assertEquals(200, response.statusCode());
+
+        java.nio.file.Files.writeString(users, original);
+        touch(users, 60);
+        try (Stream<String> lines = response.body()) {
+            // the stream must terminate by itself with an error event once the token is gone
+            List<String> all = lines.toList();
+            assertTrue(all.stream().anyMatch(l -> l.startsWith("data: ") && l.contains("Uptime")));
+            assertTrue(all.stream().anyMatch(l -> l.equals("event: error")), "stream ended with an error event");
+            assertTrue(all.stream().anyMatch(l -> l.contains("no longer valid")));
+        }
+    }
+
+    private static void touch(java.nio.file.Path file, int secondsAhead) throws java.io.IOException {
+        java.nio.file.Files.setLastModifiedTime(file,
+                java.nio.file.attribute.FileTime.from(java.time.Instant.now().plusSeconds(secondsAhead)));
+    }
+
+    @Test
     void webSocketSubscriptions() throws Exception {
         URI ws = URI.create("ws://localhost:" + server.port() + "/rocoto/api/v1/ws");
         CompletableFuture<String> firstValue = new CompletableFuture<>();

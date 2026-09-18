@@ -41,12 +41,12 @@ public class RocotoAuthFilter extends HttpFilter {
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         RocotoSecurity security = (RocotoSecurity) getServletContext().getAttribute(RocotoSecurity.CONTEXT_ATTRIBUTE);
+        hardenResponse(response);
         if (security == null) {
             // Start-up failed (e.g. invalid configuration). Fail closed.
             sendError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Rocoto is not initialised; see server log");
             return;
         }
-        hardenResponse(response);
         if (!originAllowed(request, response, security)) {
             return;
         }

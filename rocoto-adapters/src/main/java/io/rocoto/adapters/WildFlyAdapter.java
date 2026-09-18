@@ -79,11 +79,12 @@ public class WildFlyAdapter extends GenericAdapter {
                         Map<String, Object> r = row(name, n);
                         put(r, "jndiName", reader.read(n, "jndiName"));
                         put(r, "enabled", reader.read(n, "enabled"));
+                        put(r, "maxConnections", reader.read(n, "maxPoolSize"));
                         for (ObjectName pool : reader.search(
                                 "jboss.as:subsystem=datasources," + type + "=" + name + ",statistics=pool")) {
                             put(r, "activeConnections", reader.readFirst(pool, "inUseCount", "InUseCount"));
                             put(r, "idleConnections", reader.readFirst(pool, "idleCount", "IdleCount"));
-                            put(r, "maxConnections", reader.readFirst(pool, "availableCount", "AvailableCount"));
+                            put(r, "availableConnections", reader.readFirst(pool, "availableCount", "AvailableCount"));
                             put(r, "waitingThreads", reader.readFirst(pool, "waitCount", "WaitCount"));
                             put(r, "maxUsedConnections", reader.readFirst(pool, "maxUsedCount", "MaxUsedCount"));
                         }
