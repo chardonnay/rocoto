@@ -13,7 +13,12 @@ ELYTRON_PASSWORD='Container-Secret-1!'
 
 cleanup() {
   docker logs "$NAME" > "$WORK/server.log" 2>&1 || true
-  if [ "${FAILED:-0}" = "1" ]; then tail -n 150 "$WORK/server.log" || true; fi
+  if [ "${FAILED:-0}" = "1" ]; then
+    echo "---- Rocoto related server log ----"
+    sed 's/\x1b\[[0-9;]*m//g' "$WORK/server.log" | grep -E "rocoto|Rocoto|Caused by|ERROR" | grep -v "io.rocoto.audit" | tail -n 60 || true
+    echo "---- audit ----"
+    sed 's/\x1b\[[0-9;]*m//g' "$WORK/server.log" | grep "io.rocoto.audit" | tail -n 30 || true
+  fi
   docker rm -f "$NAME" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -44,7 +49,9 @@ status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 echo "Authentication"
 check "anonymous is rejected" 401 "$(status "$BASE/api/v1/server")"
 check "wrong password is rejected" 401 "$(status -u rita:wrong "$BASE/api/v1/server")"
+check "wrong Elytron password is rejected" 401 "$(status -u carl:wrong "$BASE/api/v1/server")"
 SERVER_BUILTIN="$(curl -s -u "rita:$BUILTIN_PASSWORD" "$BASE/api/v1/server")"
+echo "  (built-in response: $(echo "$SERVER_BUILTIN" | head -c 300))"
 check "built-in user" basic "$(echo "$SERVER_BUILTIN" | jq -r .caller.authenticatedBy)"
 SERVER_ELYTRON="$(curl -s -u "carl:$ELYTRON_PASSWORD" "$BASE/api/v1/server")"
 check "Elytron user is authenticated by the container" container "$(echo "$SERVER_ELYTRON" | jq -r .caller.authenticatedBy)"

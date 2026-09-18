@@ -32,9 +32,11 @@ public final class RocotoSecurity implements AutoCloseable {
     private final AuditLogger audit;
     private final List<String> allowedOrigins;
     private final boolean anonymousHealth;
+    private final String containerChallenge;
 
     private RocotoSecurity(AuthMode mode, BuiltinAuthenticator builtin, AccessPolicy policy, ValueMasker masker,
-            AuditLogger audit, List<String> allowedOrigins, boolean anonymousHealth) {
+            AuditLogger audit, List<String> allowedOrigins, boolean anonymousHealth, String containerChallenge) {
+        this.containerChallenge = containerChallenge;
         this.mode = mode;
         this.builtin = builtin;
         this.policy = policy;
@@ -70,7 +72,8 @@ public final class RocotoSecurity implements AutoCloseable {
         LOG.info("Rocoto security initialised: auth.mode=" + modeName.toLowerCase(Locale.ROOT));
         return new RocotoSecurity(mode, builtin, AccessPolicy.fromConfig(policySection),
                 ValueMasker.fromConfig(policySection), AuditLogger.fromConfig(config.sub("audit")), origins,
-                config.bool("health.allowAnonymous", false));
+                config.bool("health.allowAnonymous", false),
+                auth.string("container.challenge", "Basic realm=\"Rocoto\", charset=\"UTF-8\""));
     }
 
     public RequestPipeline pipeline(MBeanAccess access) {
@@ -99,6 +102,14 @@ public final class RocotoSecurity implements AutoCloseable {
 
     public List<String> allowedOrigins() {
         return allowedOrigins;
+    }
+
+    /**
+     * {@code WWW-Authenticate} value Rocoto sends in container/chain mode when the application
+     * server did not issue a challenge itself ({@code auth.container.challenge}).
+     */
+    public String containerChallenge() {
+        return containerChallenge;
     }
 
     public boolean anonymousHealth() {

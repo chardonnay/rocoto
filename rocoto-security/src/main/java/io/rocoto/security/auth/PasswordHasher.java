@@ -73,10 +73,23 @@ public final class PasswordHasher {
         }
     }
 
+    /**
+     * Application servers register security providers of their own (WildFly: Elytron) that offer
+     * key factories under the same algorithm name but with different semantics. Ask for the JDK's
+     * implementation first and only fall back to provider search order on other JDK vendors.
+     */
+    private static SecretKeyFactory factory() throws NoSuchAlgorithmException {
+        try {
+            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256", "SunJCE");
+        } catch (java.security.NoSuchProviderException | NoSuchAlgorithmException e) {
+            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        }
+    }
+
     private static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int length) {
         PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, length * 8);
         try {
-            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
+            return factory().generateSecret(spec).getEncoded();
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new IllegalStateException("PBKDF2WithHmacSHA256 is not available", e);
         } finally {

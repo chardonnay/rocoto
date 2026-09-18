@@ -137,13 +137,18 @@ public class RocotoAuthFilter extends HttpFilter {
             boolean authenticated;
             try {
                 authenticated = request.authenticate(response);
-            } catch (IllegalStateException e) {
-                // No login-config / security domain configured for the deployment.
-                sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
-                return null;
+            } catch (IllegalStateException | ServletException e) {
+                // IllegalStateException: no login-config / security domain for the deployment.
+                // ServletException: Undertow (WildFly) reports "authentication failed" this way when the
+                // mechanism did not send a challenge itself, e.g. for requests without credentials.
+                authenticated = false;
             }
             if (!authenticated) {
-                // The container has already written its challenge.
+                if (!response.isCommitted() && response.getStatus() != HttpServletResponse.SC_UNAUTHORIZED) {
+                    // The container has not written a challenge of its own.
+                    response.resetBuffer();
+                    challenge(response, security);
+                }
                 return null;
             }
         }
@@ -170,8 +175,15 @@ public class RocotoAuthFilter extends HttpFilter {
     }
 
     private static void challenge(HttpServletResponse response, RocotoSecurity security) throws IOException {
-        for (String c : security.builtin().challenges()) {
-            response.addHeader("WWW-Authenticate", c);
+        if (security.mode() != AuthMode.BUILTIN && !response.containsHeader("WWW-Authenticate")) {
+            response.addHeader("WWW-Authenticate", security.containerChallenge());
+        }
+        if (security.builtin() != null) {
+            for (String c : security.builtin().challenges()) {
+                if (!response.getHeaders("WWW-Authenticate").contains(c)) {
+                    response.addHeader("WWW-Authenticate", c);
+                }
+            }
         }
         sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Authentication required");
     }

@@ -27,6 +27,13 @@
       <artifactId>rocoto-security</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- The real Jolokia client proves protocol compatibility. Test scope only, never shipped. -->
+    <dependency>
+      <groupId>org.jolokia</groupId>
+      <artifactId>jolokia-client-java</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-core</artifactId>

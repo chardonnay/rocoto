@@ -41,6 +41,10 @@ server:
 auth:
   mode: builtin                 # builtin | container | chain
   allowInsecureTransport: false # true = accept credentials over plain HTTP (local testing only)
+  container:
+    # WWW-Authenticate value Rocoto sends in container/chain mode when the application server did
+    # not issue a challenge itself (WildFly/Undertow for requests without credentials)
+    challenge: 'Basic realm="Rocoto", charset="UTF-8"'
   builtin:
     usersFile: rocoto-users.yaml
     basic: true                 # HTTP Basic against the user store
