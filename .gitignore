@@ -1,0 +1,26 @@
+# Maven
+target/
+dependency-reduced-pom.xml
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# macOS
+.DS_Store
+
+# Local runtime files – never commit real credentials
+rocoto-users.yaml
+!**/src/test/resources/**/rocoto-users.yaml
+!examples/**/rocoto-users.yaml
+*.p12
+*.jks
+*.key
+!**/src/test/resources/**/*.p12
+audit.log
+.claude/
