@@ -41,7 +41,44 @@ public final class Config {
 
     public String string(String path, String defaultValue) {
         Object v = get(path);
-        return v == null ? defaultValue : String.valueOf(v);
+        return v == null ? defaultValue : resolve(String.valueOf(v), path);
+    }
+
+    /**
+     * Resolves a value that consists of exactly one reference: {@code ${env:NAME}},
+     * {@code ${sys:name}} or {@code ${file:/path}} (file content, trimmed). This keeps secrets such
+     * as key store passwords out of rocoto.yaml.
+     */
+    private static String resolve(String value, String path) {
+        if (!value.startsWith("${") || !value.endsWith("}")) {
+            return value;
+        }
+        String ref = value.substring(2, value.length() - 1);
+        int colon = ref.indexOf(':');
+        if (colon < 0) {
+            return value;
+        }
+        String kind = ref.substring(0, colon);
+        String name = ref.substring(colon + 1);
+        String resolved;
+        switch (kind) {
+            case "env" -> resolved = System.getenv(name);
+            case "sys" -> resolved = System.getProperty(name);
+            case "file" -> {
+                try {
+                    resolved = java.nio.file.Files.readString(java.nio.file.Path.of(name)).trim();
+                } catch (java.io.IOException e) {
+                    throw new ConfigException(path + ": cannot read " + name, e);
+                }
+            }
+            default -> {
+                return value;
+            }
+        }
+        if (resolved == null) {
+            throw new ConfigException(path + ": " + value + " is not set");
+        }
+        return resolved;
     }
 
     public boolean bool(String path, boolean defaultValue) {

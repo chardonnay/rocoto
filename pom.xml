@@ -29,6 +29,7 @@
 
   <modules>
     <module>rocoto-core</module>
+    <module>rocoto-security</module>
   </modules>
 
   <properties>
@@ -48,6 +49,11 @@
       <dependency>
         <groupId>io.rocoto</groupId>
         <artifactId>rocoto-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.rocoto</groupId>
+        <artifactId>rocoto-security</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
