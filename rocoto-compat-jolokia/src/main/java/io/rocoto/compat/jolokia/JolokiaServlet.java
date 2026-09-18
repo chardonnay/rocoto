@@ -86,7 +86,13 @@ public class JolokiaServlet extends HttpServlet {
                     body = execute(runtime, ctx, parsed, request);
                 }
             } else {
-                body = execute(runtime, ctx, fromPath(Http.pathSegmentsRaw(request, "/jolokia")), request);
+                Map<String, Object> fromPath = fromPath(Http.pathSegmentsRaw(request, "/jolokia"));
+                String type = String.valueOf(fromPath.get("type"));
+                if ((type.equals("write") || type.equals("exec")) && !getMutationAllowed(runtime, request)) {
+                    Http.writeJson(response, 405, Http.error(405, "write and exec must be sent with POST"));
+                    return;
+                }
+                body = execute(runtime, ctx, fromPath, request);
             }
             response.setStatus(200);
             response.setContentType("text/plain".equals(request.getParameter("mimeType"))
@@ -96,6 +102,22 @@ public class JolokiaServlet extends HttpServlet {
         } catch (RuntimeException e) {
             Http.writeError(response, e);
         }
+    }
+
+    /**
+     * A state change triggered by a plain URL is what CSRF attacks are made of, yet the Jolokia
+     * Java client sends simple write/exec requests as GET. Compromise: GET mutations are accepted
+     * from non-browser clients only. Every current browser labels its requests with fetch metadata
+     * ({@code Sec-Fetch-*}); a request carrying such a header, or an {@code Origin}, has to use POST,
+     * which is protected by the JSON-only rule. {@code compat.jolokia.allowGetMutations: false}
+     * switches GET mutations off altogether.
+     */
+    private static boolean getMutationAllowed(RocotoRuntime runtime, HttpServletRequest request) {
+        if (!runtime.config().bool("compat.jolokia.allowGetMutations", true)) {
+            return false;
+        }
+        return request.getHeader("Sec-Fetch-Site") == null && request.getHeader("Sec-Fetch-Mode") == null
+                && request.getHeader("Origin") == null;
     }
 
     // ---- request parsing -----------------------------------------------------------------
@@ -241,7 +263,7 @@ public class JolokiaServlet extends HttpServlet {
         }
         if (name.isPattern()) {
             Map<String, Object> result = new LinkedHashMap<>();
-            for (ObjectName concrete : pipeline.search(ctx, name)) {
+            for (ObjectName concrete : Http.limited(pipeline.search(ctx, name), params.maxPatternMBeans)) {
                 Map<String, String> errors = new LinkedHashMap<>();
                 Map<String, Object> values = pipeline.readAll(ctx, concrete, errors);
                 if (!attributes.isEmpty()) {
@@ -508,8 +530,10 @@ public class JolokiaServlet extends HttpServlet {
         final int maxCollectionSize;
         final boolean ignoreErrors;
         final boolean canonicalNaming;
+        final int maxPatternMBeans;
 
         Params(Map<String, Object> request, HttpServletRequest http) {
+            this.maxPatternMBeans = Http.runtime(http.getServletContext()).config().integer("api.maxPatternMBeans", 1000);
             Map<?, ?> config = request.get("config") instanceof Map<?, ?> m ? m : Map.of();
             this.maxDepth = intParam(config, http, "maxDepth");
             this.maxCollectionSize = intParam(config, http, "maxCollectionSize");

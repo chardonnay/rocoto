@@ -91,6 +91,7 @@ health:
 
 api:
   maxBulkRequests: 100
+  maxPatternMBeans: 1000        # a pattern read matching more MBeans is refused with 413
 
 metrics:
   enabled: true
@@ -117,6 +118,8 @@ stream:
 compat:
   jolokia:
     enabled: true               # the /jolokia endpoint
+    allowGetMutations: true     # write/exec as GET URLs: accepted from non-browser clients only
+                                # (requests with Sec-Fetch-*/Origin headers must POST); false = never
 
 tls:
   outbound:                     # connections Rocoto opens: JWKS download, OTLP push

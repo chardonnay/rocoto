@@ -216,6 +216,13 @@ public class RocotoAuthFilter extends HttpFilter {
             RocotoSecurity security) throws IOException {
         String origin = request.getHeader("Origin");
         if (origin == null) {
+            // Browsers do not send Origin for plain cross-site GETs (<img>, <script>, navigation) but
+            // they do attach cached Basic credentials. Fetch metadata closes that gap.
+            String site = request.getHeader("Sec-Fetch-Site");
+            if (site != null && !site.equals("same-origin") && !site.equals("none")) {
+                sendError(response, HttpServletResponse.SC_FORBIDDEN, "Cross-site request denied");
+                return false;
+            }
             return true;
         }
         String self = request.getScheme() + "://" + request.getServerName()

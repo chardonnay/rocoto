@@ -15,6 +15,9 @@ import jakarta.servlet.http.HttpServletResponse;
 /** The API operations, shared by the resource style, the RPC style and bulk requests. */
 final class Operations {
 
+    /** Set once at start-up from {@code api.maxPatternMBeans}. */
+    static volatile int maxPatternMBeans = 1000;
+
     private Operations() {
     }
 
@@ -79,7 +82,7 @@ final class Operations {
         Map<String, Object> out = new LinkedHashMap<>();
         if (name.isPattern()) {
             Map<String, Object> perMBean = new LinkedHashMap<>();
-            for (ObjectName concrete : pipeline.search(ctx, name)) {
+            for (ObjectName concrete : Http.limited(pipeline.search(ctx, name), maxPatternMBeans)) {
                 Map<String, String> errors = new LinkedHashMap<>();
                 Map<String, Object> values = pipeline.readAll(ctx, concrete, errors);
                 if (!attributes.isEmpty()) {

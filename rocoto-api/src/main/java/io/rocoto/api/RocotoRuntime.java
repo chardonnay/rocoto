@@ -56,6 +56,7 @@ public final class RocotoRuntime implements AutoCloseable {
                 OutboundTls.context(config.sub("tls.outbound")), metrics, pipeline);
         this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"), security::stillValid);
         this.tlsProbe = TlsSelfProbe.start(config.sub("tls.selfProbe"));
+        Operations.maxPatternMBeans = config.integer("api.maxPatternMBeans", 1000);
     }
 
     /** Builds the runtime. Any configuration error aborts start-up: Rocoto fails closed. */

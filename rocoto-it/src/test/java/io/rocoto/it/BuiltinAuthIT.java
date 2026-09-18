@@ -123,6 +123,10 @@ class BuiltinAuthIT {
                 "Origin", "https://evil.example", "Access-Control-Request-Method", "POST");
         assertEquals(403, preflight.statusCode());
         assertTrue(preflight.headers().firstValue("Access-Control-Allow-Origin").isEmpty());
+        // <img src=...> style request: no Origin header, but browsers label it
+        assertEquals(403, server.get("/jolokia/read/java.lang:type=Memory/Verbose", admin,
+                "Sec-Fetch-Site", "cross-site").statusCode());
+        assertEquals(200, server.get("/api/v1/server", admin, "Sec-Fetch-Site", "same-origin").statusCode());
         // what an HTML form can send
         assertEquals(415, server.send("POST", "/api/v1/exec", admin, "application/x-www-form-urlencoded",
                 "mbean=java.lang:type=Memory&operation=gc").statusCode());
@@ -269,8 +273,13 @@ class BuiltinAuthIT {
         assertEquals(403L, ((Map<?, ?>) results.get(2)).get("status"), "exec is denied for readers");
         assertEquals(403L, ((Map<?, ?>) results.get(3)).get("status"), "proxy mode does not exist");
 
-        Map<String, Object> exec = TestServer.json(server.get("/jolokia/exec/java.lang:type=Memory/gc",
-                TestServer.basic(TestServer.OPERATOR)));
+        // state changes by URL: fine for non-browser clients, refused for anything that looks like a browser
+        assertEquals(200L, TestServer.json(server.get("/jolokia/exec/java.lang:type=Memory/gc",
+                TestServer.basic(TestServer.OPERATOR))).get("status"));
+        assertEquals(405, server.get("/jolokia/exec/java.lang:type=Memory/gc",
+                TestServer.basic(TestServer.OPERATOR), "Sec-Fetch-Site", "same-origin").statusCode());
+        Map<String, Object> exec = TestServer.json(server.postJson("/jolokia", TestServer.basic(TestServer.OPERATOR),
+                "{\"type\":\"exec\",\"mbean\":\"java.lang:type=Memory\",\"operation\":\"gc\"}"));
         assertEquals(200L, exec.get("status"));
 
         Map<String, Object> list = TestServer.json(server.get("/jolokia/list/java.lang/type=Memory", reader));

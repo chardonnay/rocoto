@@ -89,6 +89,15 @@ public final class Http {
         return URLDecoder.decode(rest.replace("+", "%2B"), StandardCharsets.UTF_8);
     }
 
+    /** Guards pattern reads: reading every attribute of thousands of MBeans in one request is refused. */
+    public static <T> java.util.Collection<T> limited(java.util.Collection<T> matches, int max) {
+        if (matches.size() > max) {
+            throw new ApiException(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, "The pattern matches "
+                    + matches.size() + " MBeans; at most " + max + " can be read at once (api.maxPatternMBeans)");
+        }
+        return matches;
+    }
+
     public static Object readJson(HttpServletRequest request) throws IOException {
         StringBuilder sb = new StringBuilder();
         char[] buffer = new char[4096];
