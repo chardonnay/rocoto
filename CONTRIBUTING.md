@@ -19,8 +19,9 @@ Thanks for your interest in Rocoto!
 mvn verify
 ```
 
-Requires JDK 17+ and Maven 3.9+. Integration tests that need Docker
-(Testcontainers) only run with `-Pcontainer-it`.
+Requires JDK 17+ and Maven 3.9+. `mvn verify` includes the integration tests, which deploy the
+real WAR into an embedded Tomcat. CI additionally runs `ci/wildfly/smoke-test.sh` against a real
+WildFly (needs Docker) and checks links and Mermaid diagrams (`ci/docs/`).
 
 ## Pull requests
 
