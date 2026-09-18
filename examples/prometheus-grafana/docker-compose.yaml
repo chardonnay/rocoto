@@ -1,0 +1,41 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# Tomcat speaks plain HTTP and ../tomcat-builtin/conf/rocoto.yaml sets
+# auth.allowInsecureTransport. The API token in prometheus/rocoto-token is published in
+# the README. Grafana allows anonymous viewers and uses a demo admin password.
+# =====================================================================================
+services:
+  tomcat:
+    image: tomcat:10.1-jdk17
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../rocoto-war/target/rocoto.war:/usr/local/tomcat/webapps/rocoto.war:ro
+      - ../demo-app/target/demo-app.war:/usr/local/tomcat/webapps/demo-app.war:ro
+      - ../tomcat-builtin/conf/rocoto.yaml:/usr/local/tomcat/conf/rocoto.yaml:ro
+      - ../tomcat-builtin/conf/rocoto-users.yaml:/usr/local/tomcat/conf/rocoto-users.yaml:ro
+
+  prometheus:
+    image: prom/prometheus:v2.53.2
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rocoto-token:/etc/prometheus/rocoto-token:ro
+    depends_on:
+      - tomcat
+
+  grafana:
+    image: grafana/grafana-oss:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: demo-grafana-123   # DEMO ONLY
+      GF_AUTH_ANONYMOUS_ENABLED: "true"              # DEMO ONLY
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus

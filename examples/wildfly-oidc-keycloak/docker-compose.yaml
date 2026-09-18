@@ -1,0 +1,34 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# Keycloak runs in development mode over plain HTTP, the realm contains users with public
+# passwords and a public client with the password grant. conf/rocoto.yaml sets
+# auth.allowInsecureTransport, which also permits the http:// JWKS URL.
+# =====================================================================================
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: demo-keycloak-123     # DEMO ONLY
+      # Fixed front-end URL, so the "iss" claim is always http://localhost:8081/realms/rocoto-demo,
+      # while WildFly may still fetch the JWKS through the internal name http://keycloak:8080.
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/rocoto-demo-realm.json:/opt/keycloak/data/import/rocoto-demo-realm.json:ro
+
+  wildfly:
+    image: quay.io/wildfly/wildfly:latest-jdk17   # pin a release tag for reproducible runs
+    depends_on:
+      - keycloak
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../rocoto-war/target/rocoto.war:/opt/jboss/wildfly/standalone/deployments/rocoto.war:ro
+      - ../demo-app/target/demo-app.war:/opt/jboss/wildfly/standalone/deployments/demo-app.war:ro
+      - ./conf/rocoto.yaml:/opt/jboss/wildfly/standalone/configuration/rocoto.yaml:ro
+      - ./conf/rocoto-users.yaml:/opt/jboss/wildfly/standalone/configuration/rocoto-users.yaml:ro

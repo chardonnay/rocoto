@@ -1,0 +1,54 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# auth.allowInsecureTransport makes Rocoto accept passwords and tokens over plain HTTP.
+# In production leave it at its default (false) and serve Rocoto over HTTPS.
+# =====================================================================================
+auth:
+  mode: builtin
+  allowInsecureTransport: true      # LOCAL DEMO ONLY - never use in production
+  builtin:
+    usersFile: rocoto-users.yaml    # relative to the directory of this file
+
+policy:
+  rules:
+    # Operators (and admins) may run the two maintenance operations of the demo MBean ...
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "com.example.demo:type=Orders"
+      operations: [resetCounters, drainQueue]
+    # ... and trigger a garbage collection.
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "java.lang:type=Memory"
+      operations: [gc]
+    # Only admins may switch the maintenance mode.
+    - roles: [rocoto-admin]
+      allow: [write]
+      mbean: "com.example.demo:type=Orders"
+      attributes: [MaintenanceMode]
+
+audit:
+  file: /usr/local/tomcat/logs/rocoto-audit.log
+
+health:
+  allowAnonymous: true              # GET /rocoto/api/v1/health/live without credentials
+
+metrics:
+  profiles: [jvm, auto]             # auto = the profile of the detected server (tomcat)
+  rules:
+    - mbean: "com.example.demo:type=Orders"
+      attribute: OrdersProcessed
+      name: demo_orders_processed_total
+      type: counter
+      help: "Orders processed by the demo application"
+    - mbean: "com.example.demo:type=Orders"
+      attribute: QueueDepth
+      name: demo_orders_queue_depth
+      help: "Orders waiting in the demo application's queue"
+    - mbean: "com.example.demo:type=Orders"
+      attribute: MaintenanceMode
+      name: demo_maintenance_mode
+      help: "1 while the demo application is in maintenance mode"
+
+stream:
+  minIntervalMillis: 500

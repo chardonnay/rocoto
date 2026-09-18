@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HTTPS only. Certificate and key are PEM files mounted from a kubernetes.io/tls Secret
+  (cert-manager or "kubectl create secret"). sslImplementationName forces JSSE, which is required
+  for OCSP stapling by the JDK (-Djdk.tls.server.enableStatusRequestExtension=true).
+-->
+<Server port="-1">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener"/>
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener"/>
+
+  <Service name="Catalina">
+    <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+               SSLEnabled="true" scheme="https" secure="true" maxThreads="100"
+               sslImplementationName="org.apache.tomcat.util.net.jsse.JSSEImplementation">
+      <SSLHostConfig protocols="TLSv1.2+TLSv1.3">
+        <Certificate certificateFile="/etc/rocoto-tls/tls.crt"
+                     certificateKeyFile="/etc/rocoto-tls/tls.key"/>
+      </SSLHostConfig>
+    </Connector>
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="false"/>
+    </Engine>
+  </Service>
+</Server>

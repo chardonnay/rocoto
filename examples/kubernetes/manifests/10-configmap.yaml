@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rocoto-config
+  namespace: rocoto-demo
+  labels:
+    app.kubernetes.io/name: rocoto-demo
+data:
+  # Found through the environment variable ROCOTO_CONFIG (see the Deployment).
+  # auth.allowInsecureTransport is deliberately absent: the pod serves HTTPS.
+  rocoto.yaml: |
+    auth:
+      mode: builtin
+      builtin:
+        # absolute path: the user store comes from a Secret, not from this ConfigMap
+        usersFile: /etc/rocoto-secrets/rocoto-users.yaml
+        lockout:
+          # Behind an ingress or a service mesh all clients may share one source address.
+          # 0 disables the per-address lockout; the per-user lockout stays active.
+          addressMaxAttempts: 0
+
+    policy:
+      rules:
+        - roles: [rocoto-operator, rocoto-admin]
+          allow: [exec]
+          mbean: "java.lang:type=Memory"
+          operations: [gc]
+
+    # No audit.file: audit events always go to the io.rocoto.audit logger and therefore to the
+    # container log, where the cluster's log shipping picks them up.
+
+    health:
+      allowAnonymous: true        # liveness/readiness probes cannot send credentials easily
+
+    metrics:
+      profiles: [jvm, auto]
+
+    tls:
+      selfProbe:
+        url: https://localhost:8443
+        expectStapling: false     # set to true once the certificate has an OCSP responder and
+                                  # the JVM runs with -Djdk.tls.server.enableStatusRequestExtension=true

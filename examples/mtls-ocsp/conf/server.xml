@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tomcat 10.1 with one HTTPS connector. DEMO ONLY: the store password is passed as the system
+  property demo.store.password (see docker-compose.yaml) and is public.
+
+  * sslImplementationName forces JSSE. OCSP stapling by the JDK
+    (-Djdk.tls.server.enableStatusRequestExtension=true) only works with the JSSE implementation,
+    not with the OpenSSL implementation Tomcat picks when tomcat-native is installed.
+  * certificateVerification="optional": the client MAY present a certificate. Rocoto decides what
+    an anonymous connection may do (nothing) - with "required" Basic/token clients would be locked out.
+  * Tomcat only checks that the client certificate chains to truststoreFile. The revocation check
+    is done by Rocoto (auth.builtin.mtls.revocation).
+-->
+<Server port="-1">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener"/>
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener"/>
+
+  <Service name="Catalina">
+    <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+               SSLEnabled="true" scheme="https" secure="true" maxThreads="50"
+               sslImplementationName="org.apache.tomcat.util.net.jsse.JSSEImplementation">
+      <SSLHostConfig certificateVerification="optional"
+                     protocols="TLSv1.2+TLSv1.3"
+                     truststoreFile="conf/certs/ca.p12"
+                     truststorePassword="${demo.store.password}"
+                     truststoreType="PKCS12">
+        <Certificate certificateKeystoreFile="conf/certs/server.p12"
+                     certificateKeystorePassword="${demo.store.password}"
+                     certificateKeystoreType="PKCS12"/>
+      </SSLHostConfig>
+    </Connector>
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="false"/>
+    </Engine>
+  </Service>
+</Server>

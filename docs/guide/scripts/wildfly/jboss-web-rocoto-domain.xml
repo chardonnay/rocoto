@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Overlay content for WEB-INF/jboss-web.xml of rocoto.war.
+  "rocoto" must be the name of an existing /subsystem=undertow/application-security-domain.
+  Review and adapt before use.
+-->
+<jboss-web xmlns="http://www.jboss.com/xml/ns/javaee">
+  <context-root>/rocoto</context-root>
+  <security-domain>rocoto</security-domain>
+  <!--
+    MUST be kept - the overlay replaces the whole file. Undertow would otherwise evaluate an
+    Authorization header against Elytron before Rocoto's filter runs and answer 401 for users that
+    only exist in Rocoto's own user store (auth.mode "chain"/"builtin"). Rocoto triggers container
+    authentication itself via HttpServletRequest.authenticate().
+  -->
+  <proactive-authentication>false</proactive-authentication>
+</jboss-web>

@@ -1,0 +1,59 @@
+{
+  "realm": "rocoto-demo",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      { "name": "rocoto-reader", "description": "Read access to Rocoto" },
+      { "name": "rocoto-admin", "description": "Administrative access to Rocoto" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "rocoto-cli",
+      "name": "Rocoto demo client (DEMO ONLY: public client with the password grant)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocol": "openid-connect",
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "audience-rocoto",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "rocoto",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "kate",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Kate",
+      "lastName": "Demo",
+      "email": "kate@example.com",
+      "credentials": [ { "type": "password", "value": "demo-password-123", "temporary": false } ],
+      "realmRoles": [ "rocoto-admin" ]
+    },
+    {
+      "username": "ken",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ken",
+      "lastName": "Demo",
+      "email": "ken@example.com",
+      "credentials": [ { "type": "password", "value": "demo-password-123", "temporary": false } ],
+      "realmRoles": [ "rocoto-reader" ]
+    }
+  ]
+}

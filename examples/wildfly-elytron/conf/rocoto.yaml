@@ -1,0 +1,46 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# auth.allowInsecureTransport makes Rocoto accept passwords and tokens over plain HTTP.
+# In production leave it at its default (false) and use the HTTPS listener of WildFly.
+# =====================================================================================
+auth:
+  # chain = Rocoto's own credentials first (here: the API token for Prometheus), everything
+  # Rocoto does not know - e.g. the Basic credentials of "wilma" - is handed to Elytron.
+  mode: chain
+  allowInsecureTransport: true      # LOCAL DEMO ONLY - never use in production
+  builtin:
+    usersFile: rocoto-users.yaml    # contains only the token; people live in the Elytron realm
+
+policy:
+  rules:
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "com.example.demo:type=Orders"
+      operations: [resetCounters, drainQueue]
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "java.lang:type=Memory"
+      operations: [gc]
+    - roles: [rocoto-admin]
+      allow: [write]
+      mbean: "com.example.demo:type=Orders"
+      attributes: [MaintenanceMode]
+
+audit:
+  file: /opt/jboss/wildfly/standalone/log/rocoto-audit.log
+
+health:
+  allowAnonymous: true
+
+metrics:
+  profiles: [jvm, auto]             # auto = wildfly
+  rules:
+    - mbean: "com.example.demo:type=Orders"
+      attribute: OrdersProcessed
+      name: demo_orders_processed_total
+      type: counter
+      help: "Orders processed by the demo application"
+    - mbean: "com.example.demo:type=Orders"
+      attribute: QueueDepth
+      name: demo_orders_queue_depth
+      help: "Orders waiting in the demo application's queue"

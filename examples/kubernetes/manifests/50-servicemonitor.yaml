@@ -1,0 +1,31 @@
+# Requires the Prometheus Operator CRDs (monitoring.coreos.com/v1). Depending on how your
+# Prometheus resource selects ServiceMonitors you may need an extra label, e.g. "release: kube-prometheus-stack".
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rocoto-demo
+  namespace: rocoto-demo
+  labels:
+    app.kubernetes.io/name: rocoto-demo
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rocoto-demo
+  endpoints:
+    - port: https
+      scheme: https
+      path: /rocoto/metrics
+      interval: 30s
+      # Sent as "Authorization: Bearer <token>". Older operator versions: use
+      #   bearerTokenSecret: { name: rocoto-prometheus-token, key: token }
+      authorization:
+        type: Bearer
+        credentials:
+          name: rocoto-prometheus-token
+          key: token
+      tlsConfig:
+        serverName: rocoto-demo.rocoto-demo.svc
+        ca:
+          secret:
+            name: rocoto-tls
+            key: ca.crt

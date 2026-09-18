@@ -1,0 +1,15 @@
+{
+  "name": "rocoto-client-example",
+  "version": "1.0.0",
+  "description": "Rocoto example: Node.js client (built-in fetch, SSE over fetch streaming, WebSocket with ws)",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node rocoto-client.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

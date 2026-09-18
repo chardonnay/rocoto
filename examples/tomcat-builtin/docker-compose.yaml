@@ -1,0 +1,17 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# Tomcat is published on plain HTTP and conf/rocoto.yaml sets auth.allowInsecureTransport.
+# The credentials in conf/rocoto-users.yaml are published in the README.
+# =====================================================================================
+services:
+  tomcat:
+    image: tomcat:10.1-jdk17
+    ports:
+      - "8080:8080"
+    volumes:
+      # Build both WARs first - see README.md. A missing source file would be created as a directory.
+      - ../../rocoto-war/target/rocoto.war:/usr/local/tomcat/webapps/rocoto.war:ro
+      - ../demo-app/target/demo-app.war:/usr/local/tomcat/webapps/demo-app.war:ro
+      # ${catalina.base}/conf/rocoto.yaml is one of the locations Rocoto searches.
+      - ./conf/rocoto.yaml:/usr/local/tomcat/conf/rocoto.yaml:ro
+      - ./conf/rocoto-users.yaml:/usr/local/tomcat/conf/rocoto-users.yaml:ro

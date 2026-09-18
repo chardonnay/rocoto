@@ -1,0 +1,26 @@
+# =============================================================================================
+# Rocoto on WildFly >= 27 / JBoss EAP 8: bearer-only OpenID Connect through the
+# elytron-oidc-client subsystem (e.g. against Keycloak).
+#
+# Review and adapt before use; written against the WildFly 27+ management model.
+# This script has not been executed as part of Rocoto's automated tests.
+#
+# Set auth.mode: container (or chain) in rocoto.yaml. The roles rocoto-reader / rocoto-operator /
+# rocoto-admin must be realm roles of the token (realm_access.roles), or client roles of the
+# client "rocoto" when use-resource-role-mappings=true.
+# =============================================================================================
+
+# The subsystem is part of the default configurations of WildFly 27+. If it is missing:
+#   /extension=org.wildfly.extension.elytron-oidc-client:add
+#   /subsystem=elytron-oidc-client:add
+
+/subsystem=elytron-oidc-client/secure-deployment=rocoto.war:add( \
+    provider-url="https://idp.example.com/realms/ops", \
+    client-id=rocoto, \
+    bearer-only=true, \
+    ssl-required=ALL, \
+    principal-attribute=preferred_username, \
+    use-resource-role-mappings=false, \
+    verify-token-audience=true)
+
+reload

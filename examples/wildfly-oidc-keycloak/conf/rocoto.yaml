@@ -1,0 +1,37 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# auth.allowInsecureTransport accepts bearer tokens over plain HTTP AND permits the http://
+# jwksUrl below. In production: HTTPS everywhere, remove the flag, use an https:// jwksUrl.
+# =====================================================================================
+auth:
+  mode: builtin                     # Rocoto validates the JWT itself; Elytron is not involved
+  allowInsecureTransport: true      # LOCAL DEMO ONLY - never use in production
+  builtin:
+    usersFile: rocoto-users.yaml
+    basic: false                    # people authenticate at Keycloak, not with passwords here
+    tokens: true                    # API tokens (rct_...) for machines keep working
+    jwt:
+      enabled: true
+      # must equal the "iss" claim exactly - the URL clients use to reach Keycloak
+      issuer: http://localhost:8081/realms/rocoto-demo
+      # must be contained in the "aud" claim - added by the client's audience mapper
+      audience: rocoto
+      # fetched by Rocoto from inside the compose network
+      jwksUrl: http://keycloak:8080/realms/rocoto-demo/protocol/openid-connect/certs
+      nameClaim: preferred_username # default: sub (a UUID in Keycloak)
+      rolesClaim: realm_access.roles
+      # roleMapping: { ops-admin: rocoto-admin }   # if your realm roles are named differently
+
+policy:
+  rules:
+    - roles: [rocoto-admin]
+      allow: [exec]
+      mbean: "com.example.demo:type=Orders"
+      operations: [resetCounters, drainQueue]
+    - roles: [rocoto-admin]
+      allow: [write]
+      mbean: "com.example.demo:type=Orders"
+      attributes: [MaintenanceMode]
+
+health:
+  allowAnonymous: true

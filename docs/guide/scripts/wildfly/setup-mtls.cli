@@ -1,0 +1,77 @@
+# =============================================================================================
+# Rocoto on WildFly >= 27 / JBoss EAP 8: client certificate authentication (mTLS) through Elytron,
+# with OCSP revocation checking of client certificates in the trust manager.
+#
+# Review and adapt before use; written against the WildFly 27+ management model.
+# This script has not been executed as part of Rocoto's automated tests.
+#
+# Prerequisites in standalone/configuration:
+#   server.p12     server key + certificate chain
+#   client-ca.p12  CA certificate(s) that issue the client certificates
+# Replace the clear-text passwords by credential-store references
+#   credential-reference={store=<credential-store>, alias=<alias>}
+# before using this outside of a lab.
+# =============================================================================================
+
+batch
+
+# --- TLS ------------------------------------------------------------------------------------
+/subsystem=elytron/key-store=rocotoServerKS:add(path=server.p12, relative-to=jboss.server.config.dir, \
+    type=PKCS12, credential-reference={clear-text="CHANGE-ME"})
+/subsystem=elytron/key-manager=rocotoKM:add(key-store=rocotoServerKS, \
+    credential-reference={clear-text="CHANGE-ME"})
+
+/subsystem=elytron/key-store=rocotoClientCaTS:add(path=client-ca.p12, relative-to=jboss.server.config.dir, \
+    type=PKCS12, credential-reference={clear-text="CHANGE-ME"})
+
+# ocsp={} enables OCSP using the responder URL from each certificate (AIA extension).
+# Options: ocsp={responder="http://ocsp.example.com", responder-keystore=..., responder-certificate=...}
+# soft-fail=false (default): a client whose revocation status cannot be determined is rejected.
+# CRL alternative / addition:  certificate-revocation-list={path=ca.crl, relative-to=jboss.server.config.dir}
+/subsystem=elytron/trust-manager=rocotoTM:add(key-store=rocotoClientCaTS, ocsp={}, soft-fail=false)
+
+# want-client-auth=true : certificate is requested, other mechanisms (BASIC, Rocoto tokens) stay possible
+# need-client-auth=true : handshake fails without a valid client certificate (whole listener!)
+/subsystem=elytron/server-ssl-context=rocotoSSC:add(key-manager=rocotoKM, trust-manager=rocotoTM, \
+    want-client-auth=true, protocols=[TLSv1.3, TLSv1.2])
+
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context, value=rocotoSSC)
+
+# --- Identity mapping ---------------------------------------------------------------------------
+# Principal = CN of the certificate subject
+/subsystem=elytron/x500-attribute-principal-decoder=rocotoCnDecoder:add(attribute-name=CN, maximum-segments=1)
+
+# Authorization data (roles) for the certificate identities
+/subsystem=elytron/filesystem-realm=rocotoCertRealm:add(path=rocoto-cert-realm, relative-to=jboss.server.config.dir)
+/subsystem=elytron/simple-role-decoder=rocotoCertRoleDecoder:add(attribute=Roles)
+
+/subsystem=elytron/security-domain=rocotoCertDomain:add( \
+    realms=[{realm=rocotoCertRealm, role-decoder=rocotoCertRoleDecoder}], \
+    default-realm=rocotoCertRealm, \
+    permission-mapper=default-permission-mapper, \
+    principal-decoder=rocotoCnDecoder)
+
+# The certificate chain has already been validated (including OCSP) by the trust manager during
+# the handshake. A filesystem realm cannot verify X.509 evidence itself, therefore the CLIENT_CERT
+# mechanism is told not to ask the realm again. Without this property use a key-store-realm that
+# contains every client certificate instead.
+/subsystem=elytron/configurable-http-server-mechanism-factory=rocotoCertMechFactory:add( \
+    http-server-mechanism-factory=global, \
+    properties={org.wildfly.security.http.skip-certificate-verification=true})
+
+/subsystem=elytron/http-authentication-factory=rocotoCertHttpAuth:add( \
+    http-server-mechanism-factory=rocotoCertMechFactory, \
+    security-domain=rocotoCertDomain, \
+    mechanism-configurations=[{mechanism-name=CLIENT_CERT}])
+
+/subsystem=undertow/application-security-domain=rocoto:add( \
+    http-authentication-factory=rocotoCertHttpAuth, \
+    override-deployment-config=true)
+
+run-batch
+
+# One identity per certificate CN, with its Rocoto role(s)
+/subsystem=elytron/filesystem-realm=rocotoCertRealm:add-identity(identity=ops-gateway)
+/subsystem=elytron/filesystem-realm=rocotoCertRealm:add-identity-attribute(identity=ops-gateway, name=Roles, value=[rocoto-operator])
+
+reload

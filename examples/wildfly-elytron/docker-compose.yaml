@@ -1,0 +1,17 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# WildFly is published on plain HTTP and conf/rocoto.yaml sets auth.allowInsecureTransport.
+# All passwords and the API token are published in the README.
+# =====================================================================================
+services:
+  wildfly:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      # Build both WARs first - see README.md. The deployment scanner picks them up.
+      - ../../rocoto-war/target/rocoto.war:/opt/jboss/wildfly/standalone/deployments/rocoto.war:ro
+      - ../demo-app/target/demo-app.war:/opt/jboss/wildfly/standalone/deployments/demo-app.war:ro
+      # ${jboss.server.config.dir}/rocoto.yaml is one of the locations Rocoto searches.
+      - ./conf/rocoto.yaml:/opt/jboss/wildfly/standalone/configuration/rocoto.yaml:ro
+      - ./conf/rocoto-users.yaml:/opt/jboss/wildfly/standalone/configuration/rocoto-users.yaml:ro

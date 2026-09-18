@@ -1,0 +1,37 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# Real TLS (no auth.allowInsecureTransport here), but the PKI created by gen-certs.sh is a
+# throw-away demo PKI with unencrypted keys and a public store password.
+# =====================================================================================
+services:
+  # OCSP responder of the demo CA. The certificates point to it (AIA: http://ocsp:2560).
+  ocsp:
+    image: alpine/openssl:latest          # entrypoint is "openssl"
+    working_dir: /certs
+    command: >-
+      ocsp -port 2560 -index index.txt -CA ca.crt
+      -rsigner ocsp.crt -rkey ocsp.key -nmin 5 -text
+    volumes:
+      - ./certs:/certs:ro
+    ports:
+      - "2560:2560"                       # only so that you can query it from the host
+
+  tomcat:
+    image: tomcat:10.1-jdk17
+    depends_on:
+      - ocsp
+    environment:
+      # enableStatusRequestExtension: the JDK fetches an OCSP response for the server certificate
+      # (from the AIA URL) and staples it into the TLS handshake.
+      CATALINA_OPTS: >-
+        -Djdk.tls.server.enableStatusRequestExtension=true
+        -Ddemo.store.password=demo-changeit-123
+      ROCOTO_TRUSTSTORE_PASSWORD: demo-changeit-123   # DEMO ONLY, referenced from rocoto.yaml
+    ports:
+      - "8443:8443"
+    volumes:
+      - ../../rocoto-war/target/rocoto.war:/usr/local/tomcat/webapps/rocoto.war:ro
+      - ./conf/server.xml:/usr/local/tomcat/conf/server.xml:ro
+      - ./conf/rocoto.yaml:/usr/local/tomcat/conf/rocoto.yaml:ro
+      - ./conf/rocoto-users.yaml:/usr/local/tomcat/conf/rocoto-users.yaml:ro
+      - ./certs:/usr/local/tomcat/conf/certs:ro

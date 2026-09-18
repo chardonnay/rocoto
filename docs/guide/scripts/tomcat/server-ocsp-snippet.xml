@@ -1,0 +1,42 @@
+<!--
+  $CATALINA_BASE/conf/server.xml - HTTPS connector suitable for OCSP stapling (Tomcat 10.1+).
+  Review and adapt before use. Not executed as part of Rocoto's automated tests.
+
+  Stapling is performed by the JDK's TLS implementation (JSSE). Two things are needed:
+    1. bin/setenv.sh:  -Djdk.tls.server.enableStatusRequestExtension=true
+    2. a connector that really uses JSSE. If the Tomcat Native library is installed, Tomcat may
+       pick the OpenSSL implementation for NIO connectors; sslImplementationName pins JSSE.
+
+  The key store must contain the complete chain (leaf + issuing CA) and the certificate must carry
+  an OCSP responder URL in its Authority Information Access extension.
+-->
+<Connector port="8443"
+           protocol="org.apache.coyote.http11.Http11NioProtocol"
+           sslImplementationName="org.apache.tomcat.util.net.jsse.JSSEImplementation"
+           SSLEnabled="true" scheme="https" secure="true"
+           maxThreads="150">
+  <SSLHostConfig protocols="TLSv1.3,TLSv1.2">
+    <Certificate certificateKeystoreFile="conf/server.p12"
+                 certificateKeystoreType="PKCS12"
+                 certificateKeystorePassword="CHANGE-ME"
+                 type="RSA" />
+  </SSLHostConfig>
+</Connector>
+
+<!--
+  Variant with client certificates for Rocoto's built-in mTLS (auth.builtin.mtls.enabled: true).
+  "optional" requests a certificate without making it mandatory, so tokens and Basic keep working.
+  The connector only checks the chain against the trust store; Rocoto performs its own PKIX
+  validation including OCSP/CRL (auth.builtin.mtls.revocation).
+
+  <SSLHostConfig protocols="TLSv1.3,TLSv1.2"
+                 certificateVerification="optional"
+                 truststoreFile="conf/client-ca.p12"
+                 truststoreType="PKCS12"
+                 truststorePassword="CHANGE-ME">
+    <Certificate ... />
+  </SSLHostConfig>
+
+  For auth.mode container with Tomcat's own CLIENT-CERT login, additionally set
+  revocationEnabled="true" (and optionally certificateRevocationListFile) on SSLHostConfig.
+-->

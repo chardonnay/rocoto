@@ -1,0 +1,31 @@
+# Rocoto behind a real TLS connector. auth.allowInsecureTransport stays at its default (false):
+# credentials and certificates are only accepted over HTTPS.
+auth:
+  mode: builtin
+  builtin:
+    usersFile: rocoto-users.yaml
+    mtls:
+      enabled: true
+      revocation: hard-fail            # no OCSP/CRL answer = rejected
+      truststore: /usr/local/tomcat/conf/certs/ca.p12   # absolute path
+      truststorePassword: ${env:ROCOTO_TRUSTSTORE_PASSWORD}
+      truststoreType: PKCS12
+      # The client certificates carry the responder URL (AIA extension, http://ocsp:2560).
+      # Set this only if yours do not, or if the URL in them is not reachable from the server:
+      # ocspResponder: http://ocsp:2560
+      cacheSeconds: 30                 # demo: re-check quickly; default 300
+
+policy:
+  rules:
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "java.lang:type=Memory"
+      operations: [gc]
+
+audit:
+  file: /usr/local/tomcat/logs/rocoto-audit.log
+
+tls:
+  selfProbe:
+    url: https://localhost:8443        # TLS watchdog: certificate expiry and OCSP stapling
+    expectStapling: true

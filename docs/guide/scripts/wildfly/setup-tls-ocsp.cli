@@ -1,0 +1,57 @@
+# =============================================================================================
+# Rocoto on WildFly >= 27 / JBoss EAP 8: HTTPS listener prepared for OCSP stapling.
+#
+# Review and adapt before use; written against the WildFly 27+ management model.
+# This script has not been executed as part of Rocoto's automated tests.
+#
+# IMPORTANT: stapling itself is switched on by JVM system properties, not by this script.
+# Add to bin/standalone.conf (standalone.conf.bat / .ps1 on Windows):
+#
+#   JAVA_OPTS="$JAVA_OPTS -Djdk.tls.server.enableStatusRequestExtension=true"
+#   # optional tuning, see docs/guide/13-tls-and-ocsp.md
+#   JAVA_OPTS="$JAVA_OPTS -Djdk.tls.stapling.responseTimeout=5000"
+#   JAVA_OPTS="$JAVA_OPTS -Djdk.tls.stapling.cacheLifetime=3600"
+#
+# Requirements for stapling to work:
+#   - the server certificate carries an OCSP responder URL (Authority Information Access),
+#     or jdk.tls.stapling.responderURI is set;
+#   - the key store contains the complete chain (leaf + issuing CA), the issuer is needed to
+#     build the OCSP request;
+#   - the server can reach the OCSP responder over HTTP (proxy: -Dhttp.proxyHost=...);
+#   - the server-ssl-context uses the JDK's JSSE provider (the default). With the OpenSSL
+#     provider (providers=openssl / wildfly-openssl) the jdk.tls.* properties have no effect.
+# =============================================================================================
+
+batch
+
+# Server key and certificate chain (PKCS12 in standalone/configuration).
+# Replace the clear-text password by a credential-store reference:
+#   credential-reference={store=<credential-store>, alias=<alias>}
+/subsystem=elytron/key-store=rocotoTlsKS:add(path=server.p12, relative-to=jboss.server.config.dir, \
+    type=PKCS12, credential-reference={clear-text="CHANGE-ME"})
+
+/subsystem=elytron/key-manager=rocotoTlsKM:add(key-store=rocotoTlsKS, \
+    credential-reference={clear-text="CHANGE-ME"})
+
+/subsystem=elytron/server-ssl-context=rocotoTlsSSC:add(key-manager=rocotoTlsKM, \
+    protocols=[TLSv1.3, TLSv1.2])
+
+# Use the context on the HTTPS listener (default configurations reference "applicationSSC").
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context, value=rocotoTlsSSC)
+
+run-batch
+
+# --- Optional: mutual TLS with revocation checking of CLIENT certificates ------------------------
+# (independent of stapling, which concerns the SERVER certificate) - see setup-mtls.cli
+#
+# /subsystem=elytron/key-store=rocotoClientCaTS:add(path=client-ca.p12, relative-to=jboss.server.config.dir, \
+#     type=PKCS12, credential-reference={clear-text="CHANGE-ME"})
+# /subsystem=elytron/trust-manager=rocotoTlsTM:add(key-store=rocotoClientCaTS, ocsp={}, soft-fail=false)
+# /subsystem=elytron/server-ssl-context=rocotoTlsSSC:write-attribute(name=trust-manager, value=rocotoTlsTM)
+# /subsystem=elytron/server-ssl-context=rocotoTlsSSC:write-attribute(name=want-client-auth, value=true)
+
+reload
+
+# Verify from another machine:
+#   java -jar rocoto-tools.jar tls check app.example.com:8443
+#   openssl s_client -connect app.example.com:8443 -servername app.example.com -status < /dev/null

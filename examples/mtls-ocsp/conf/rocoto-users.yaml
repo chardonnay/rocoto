@@ -1,0 +1,6 @@
+# DEMO ONLY. Certificate mappings of the mtls-ocsp example; there are no passwords or tokens.
+# Rocoto built-in credentials. Managed with rocoto-tools; contains only hashes.
+certificates:
+  # glob over the RFC 2253 subject DN of the client certificate
+  - subject: "CN=ops-*,OU=Operations,O=Rocoto Demo,C=DE"
+    roles: [rocoto-operator]           # name defaults to the CN: ops-alice

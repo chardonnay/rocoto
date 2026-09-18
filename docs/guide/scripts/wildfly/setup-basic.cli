@@ -1,0 +1,63 @@
+# =============================================================================================
+# Rocoto on WildFly >= 27 / JBoss EAP 8: dedicated Elytron security domain with HTTP BASIC.
+#
+# Review and adapt before use; written against the WildFly 27+ management model.
+# This script has not been executed as part of Rocoto's automated tests.
+#
+# Run with:   $JBOSS_HOME/bin/jboss-cli.sh --connect --file=setup-basic.cli
+# Afterwards: point rocoto.war at the application-security-domain "rocoto"
+#             (deployment overlay, see rocoto-overlay.cli) and set auth.mode: container
+#             (or chain) in standalone/configuration/rocoto.yaml.
+# =============================================================================================
+
+batch
+
+# 1. Identity store: a filesystem realm below standalone/configuration/rocoto-realm
+/subsystem=elytron/filesystem-realm=rocotoRealm:add(path=rocoto-realm, relative-to=jboss.server.config.dir)
+
+# 2. Roles are taken from the identity attribute "Roles"
+/subsystem=elytron/simple-role-decoder=rocotoRoleDecoder:add(attribute=Roles)
+
+# 3. Security domain: realm + role decoder. default-permission-mapper ships with WildFly and
+#    grants the LoginPermission that an identity needs to authenticate at all.
+/subsystem=elytron/security-domain=rocotoDomain:add( \
+    realms=[{realm=rocotoRealm, role-decoder=rocotoRoleDecoder}], \
+    default-realm=rocotoRealm, \
+    permission-mapper=default-permission-mapper)
+
+# 4. HTTP authentication: BASIC, realm name shown to clients is "Rocoto"
+/subsystem=elytron/http-authentication-factory=rocotoHttpAuth:add( \
+    http-server-mechanism-factory=global, \
+    security-domain=rocotoDomain, \
+    mechanism-configurations=[{ \
+        mechanism-name=BASIC, \
+        mechanism-realm-configurations=[{realm-name=Rocoto}]}])
+
+# 5. Make the domain available to deployments under the name "rocoto".
+#    override-deployment-config=true: the mechanisms of the factory win over <login-config>
+#    in web.xml (both are BASIC here, so it only matters once you change the factory).
+/subsystem=undertow/application-security-domain=rocoto:add( \
+    http-authentication-factory=rocotoHttpAuth, \
+    override-deployment-config=true)
+
+run-batch
+
+# 6. Identities. The realm must exist before identities can be added, hence outside the batch.
+#    Replace the passwords. "clear" makes Elytron store the password in clear text inside the
+#    realm directory; prefer a hashed form such as
+#        set-password(identity=ada, bcrypt={password="...", iteration-count=12})
+#    (check ":read-operation-description(name=set-password)" on your version; some versions
+#    also require an explicit salt), or encrypt the realm with a credential-store secret key.
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=ada)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=ada, clear={password="CHANGE-ME-admin-passphrase"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=ada, name=Roles, value=[rocoto-admin])
+
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=otto)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=otto, clear={password="CHANGE-ME-operator-passphrase"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=otto, name=Roles, value=[rocoto-operator])
+
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=rita)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=rita, clear={password="CHANGE-ME-reader-passphrase"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=rita, name=Roles, value=[rocoto-reader])
+
+reload

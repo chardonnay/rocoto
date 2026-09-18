@@ -1,0 +1,7 @@
+# DEMO ONLY - the prometheus token is published in the README of this example.
+# Rocoto built-in credentials. Managed with rocoto-tools; contains only hashes.
+tokens:
+  - id: prometheus
+    hash: sha256$IFn54hbJrL/j2yObb5xTynOJcp67SMRZ4cNmhUZtt3Y
+    roles:
+      - rocoto-reader

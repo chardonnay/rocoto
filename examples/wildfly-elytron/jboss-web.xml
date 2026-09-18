@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Replaces WEB-INF/jboss-web.xml of rocoto.war through a deployment overlay (configure-rocoto.cli). -->
+<jboss-web xmlns="http://www.jboss.com/xml/ns/javaee">
+  <context-root>/rocoto</context-root>
+  <security-domain>rocoto</security-domain>
+</jboss-web>

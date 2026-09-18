@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocoto-demo
+  namespace: rocoto-demo
+  labels:
+    app.kubernetes.io/name: rocoto-demo
+spec:
+  selector:
+    app.kubernetes.io/name: rocoto-demo
+  ports:
+    - name: https
+      port: 8443
+      targetPort: https

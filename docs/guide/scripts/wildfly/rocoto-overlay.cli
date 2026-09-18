@@ -1,0 +1,22 @@
+# =============================================================================================
+# Replaces WEB-INF/jboss-web.xml of rocoto.war without rebuilding the WAR, so that the deployment
+# uses the application-security-domain "rocoto" instead of "other".
+#
+# Review and adapt before use; written against the WildFly 27+ management model.
+# This script has not been executed as part of Rocoto's automated tests.
+#
+# Prerequisite: /path/to/jboss-web.xml (see jboss-web-rocoto-domain.xml next to this script).
+# The overlay replaces the whole file: it must keep
+# <proactive-authentication>false</proactive-authentication>, otherwise Elytron evaluates
+# Authorization headers before Rocoto's filter and rejects Rocoto's built-in users with 401.
+# The path is resolved on the machine that runs jboss-cli.
+# =============================================================================================
+
+deployment-overlay add --name=rocoto-security-domain \
+    --content=/WEB-INF/jboss-web.xml=/path/to/jboss-web.xml \
+    --deployments=rocoto.war \
+    --redeploy-affected
+
+# Inspect / remove:
+#   deployment-overlay list
+#   deployment-overlay remove --name=rocoto-security-domain --redeploy-affected

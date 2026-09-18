@@ -1,0 +1,54 @@
+# =====================================================================================
+# Review and adapt before use; written against the WildFly 27+ management model.
+#
+# DEMO ONLY: the passwords below are public (see README.md). For real users run the
+# add-identity / set-password commands interactively or use your LDAP / database realm.
+#
+# Run offline while building the image:
+#   $JBOSS_HOME/bin/jboss-cli.sh --file=configure-rocoto.cli
+# =====================================================================================
+embed-server --std-out=echo --server-config=standalone.xml
+
+batch
+
+# ---- 1. Elytron filesystem realm with four identities ---------------------------------
+/subsystem=elytron/filesystem-realm=rocotoRealm:add(path=rocoto-realm, relative-to=jboss.server.config.dir)
+
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=walt)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=walt, clear={password="demo-password-123"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=walt, name=Roles, value=["rocoto-reader"])
+
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=olga)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=olga, clear={password="demo-password-123"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=olga, name=Roles, value=["rocoto-operator"])
+
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=wilma)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=wilma, clear={password="demo-password-123"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=wilma, name=Roles, value=["rocoto-admin"])
+
+# nora can log in but has no Rocoto role: she sees nothing
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity(identity=nora)
+/subsystem=elytron/filesystem-realm=rocotoRealm:set-password(identity=nora, clear={password="demo-password-123"})
+/subsystem=elytron/filesystem-realm=rocotoRealm:add-identity-attribute(identity=nora, name=Roles, value=["some-unrelated-role"])
+
+# ---- 2. Security domain: the identity attribute "Roles" becomes the roles ----------------
+/subsystem=elytron/simple-role-decoder=rocoto-roles:add(attribute=Roles)
+/subsystem=elytron/security-domain=rocotoDomain:add(default-realm=rocotoRealm, permission-mapper=default-permission-mapper, realms=[{realm=rocotoRealm, role-decoder=rocoto-roles}])
+
+# ---- 3. HTTP authentication factory offering BASIC --------------------------------------
+/subsystem=elytron/http-authentication-factory=rocoto-http-auth:add(http-server-mechanism-factory=global, security-domain=rocotoDomain, mechanism-configurations=[{mechanism-name=BASIC, mechanism-realm-configurations=[{realm-name=Rocoto}]}])
+
+# ---- 4. Make the factory available to deployments under the name "rocoto" ---------------
+/subsystem=undertow/application-security-domain=rocoto:add(http-authentication-factory=rocoto-http-auth)
+
+# ---- 5. Statistics, otherwise the pool and web metrics stay at zero ----------------------
+/subsystem=datasources/data-source=ExampleDS:write-attribute(name=statistics-enabled, value=true)
+/subsystem=undertow:write-attribute(name=statistics-enabled, value=true)
+
+run-batch
+
+# ---- 6. rocoto.war ships WEB-INF/jboss-web.xml with <security-domain>other</security-domain>.
+#         A deployment overlay points it to the domain created above without touching the WAR.
+deployment-overlay add --name=rocoto-security-domain --content=/WEB-INF/jboss-web.xml=/tmp/rocoto/jboss-web.xml --deployments=rocoto.war
+
+stop-embedded-server

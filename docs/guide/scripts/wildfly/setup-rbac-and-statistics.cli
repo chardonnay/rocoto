@@ -1,0 +1,26 @@
+# =============================================================================================
+# Optional server settings that influence what Rocoto can see on WildFly >= 27 / JBoss EAP 8.
+#
+# Review and adapt before use; written against the WildFly 27+ management model.
+# This script has not been executed as part of Rocoto's automated tests.
+# Pick the blocks you need; do not run the file blindly.
+# =============================================================================================
+
+# --- Statistics: without them /api/v1/resources and the wildfly metric profile stay empty --------
+/subsystem=datasources/data-source=ExampleDS:write-attribute(name=statistics-enabled, value=true)
+/subsystem=undertow:write-attribute(name=statistics-enabled, value=true)
+# Server-wide alternative (default configurations reference this property):
+#   JAVA_OPTS="$JAVA_OPTS -Dwildfly.statistics-enabled=true"
+
+# --- JMX subsystem: the management model must be exposed as MBeans (default configurations do) ---
+# /subsystem=jmx/expose-model=resolved:add
+# /subsystem=jmx/expose-model=expression:add
+
+# --- Management RBAC (optional) -------------------------------------------------------------------
+# /core-service=management/access=authorization:write-attribute(name=provider, value=rbac)
+# /core-service=management/access=authorization/role-mapping=Monitor:add
+# /core-service=management/access=authorization/role-mapping=Monitor/include=user-rita:add(name=rita, type=USER)
+# Treat non-core MBeans (java.lang:*, application MBeans, ...) as sensitive under RBAC:
+# /subsystem=jmx:write-attribute(name=non-core-mbean-sensitivity, value=true)
+
+reload

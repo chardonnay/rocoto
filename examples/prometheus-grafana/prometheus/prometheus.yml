@@ -1,0 +1,17 @@
+# LOCAL DEMO ONLY - never use in production: the target is scraped over plain HTTP.
+# For a real server use "scheme: https" (plus tls_config.ca_file for a private CA).
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: rocoto
+    metrics_path: /rocoto/metrics
+    scheme: http
+    authorization:
+      type: Bearer
+      # The file contains nothing but the API token (rct_...). Prometheus re-reads it on every scrape.
+      credentials_file: /etc/prometheus/rocoto-token
+    static_configs:
+      - targets: ["tomcat:8080"]
+        labels:
+          server: tomcat-demo
