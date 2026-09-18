@@ -21,5 +21,43 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: maven
-      - name: Build and test
+      - name: Build, unit tests and integration tests (embedded Tomcat)
         run: mvn -B -ntp verify
+      - name: Keep the artifacts for the server smoke tests
+        if: matrix.java == '17'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rocoto
+          path: |
+            rocoto-war/target/rocoto.war
+            rocoto-tools/target/rocoto-tools.jar
+          retention-days: 7
+
+  wildfly:
+    name: Smoke test on a real WildFly (Elytron)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Run
+        run: ci/wildfly/smoke-test.sh
+
+  docs:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Relative links
+        run: python3 ci/docs/check-links.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Mermaid diagrams
+        run: ci/docs/check-mermaid.sh

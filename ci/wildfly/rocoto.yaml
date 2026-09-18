@@ -1,0 +1,12 @@
+# CI ONLY - never use allowInsecureTransport in production.
+auth:
+  mode: chain
+  allowInsecureTransport: true
+policy:
+  rules:
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "java.lang:type=Memory"
+      operations: [gc]
+audit:
+  file: /opt/jboss/wildfly/standalone/log/rocoto-audit.log
