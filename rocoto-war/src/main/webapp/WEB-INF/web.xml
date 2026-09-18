@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0" metadata-complete="true">
+
+  <display-name>Rocoto</display-name>
+
+  <listener>
+    <listener-class>io.rocoto.api.RocotoBootstrap</listener-class>
+  </listener>
+
+  <!--
+    Every request passes this filter first. There are deliberately NO declarative
+    security-constraints: they would force container authentication and make Rocoto's
+    built-in authentication impossible. The filter enforces authentication programmatically
+    in every auth.mode, so nothing is reachable anonymously.
+  -->
+  <filter>
+    <filter-name>rocoto-auth</filter-name>
+    <filter-class>io.rocoto.security.servlet.RocotoAuthFilter</filter-class>
+    <async-supported>true</async-supported>
+  </filter>
+  <filter-mapping>
+    <filter-name>rocoto-auth</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <servlet>
+    <servlet-name>rocoto-sse</servlet-name>
+    <servlet-class>io.rocoto.api.stream.SseServlet</servlet-class>
+    <async-supported>true</async-supported>
+  </servlet>
+  <servlet>
+    <servlet-name>rocoto-api</servlet-name>
+    <servlet-class>io.rocoto.api.ApiServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>rocoto-metrics</servlet-name>
+    <servlet-class>io.rocoto.api.MetricsServlet</servlet-class>
+  </servlet>
+  <servlet>
+    <servlet-name>rocoto-jolokia</servlet-name>
+    <servlet-class>io.rocoto.compat.jolokia.JolokiaServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>rocoto-sse</servlet-name>
+    <url-pattern>/api/v1/subscribe</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>rocoto-api</servlet-name>
+    <url-pattern>/api/v1/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>rocoto-metrics</servlet-name>
+    <url-pattern>/metrics</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>rocoto-jolokia</servlet-name>
+    <url-pattern>/jolokia/*</url-pattern>
+  </servlet-mapping>
+
+  <!--
+    Used in auth.mode "container" and "chain": the mechanism the application server offers when
+    the filter calls HttpServletRequest.authenticate(). WildFly/Elytron overrides the mechanism
+    through the http-authentication-factory of the mapped security domain (BASIC, CLIENT_CERT,
+    BEARER_TOKEN, ...), so this value is only the fallback.
+  -->
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>Rocoto</realm-name>
+  </login-config>
+
+  <security-role><role-name>rocoto-reader</role-name></security-role>
+  <security-role><role-name>rocoto-operator</role-name></security-role>
+  <security-role><role-name>rocoto-admin</role-name></security-role>
+
+  <session-config>
+    <!-- Rocoto itself is stateless. If the container creates a session for its own login
+         mechanism, keep the cookie away from scripts and never fall back to URL rewriting. -->
+    <session-timeout>5</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+    </cookie-config>
+    <tracking-mode>COOKIE</tracking-mode>
+  </session-config>
+</web-app>

@@ -144,6 +144,23 @@ public final class RequestPipeline {
         return values;
     }
 
+    // ---- notifications -------------------------------------------------------------------
+
+    /** Pseudo attribute name under which the right to receive an MBean's notifications is decided. */
+    public static final String NOTIFICATIONS = "@notifications";
+
+    /**
+     * Subscribes to the JMX notifications of one MBean. Receiving notifications is a READ on the
+     * pseudo attribute {@link #NOTIFICATIONS}, so it can be allowed or denied by policy rules.
+     *
+     * @return handle that removes the listener again
+     */
+    public AutoCloseable listen(CallContext ctx, ObjectName name, javax.management.NotificationListener listener) {
+        check(ctx, Target.read(name, NOTIFICATIONS), null);
+        access.addNotificationListener(name, listener);
+        return () -> access.removeNotificationListener(name, listener);
+    }
+
     // ---- write ---------------------------------------------------------------------------
 
     /**

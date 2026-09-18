@@ -47,6 +47,7 @@ public final class BuiltinAuthenticator {
 
     private final UserStore store;
     private final Lockout lockout;
+    private volatile Lockout addressLockout;
     private final boolean allowInsecureTransport;
     private final boolean basicEnabled;
     private final boolean tokensEnabled;
@@ -61,6 +62,7 @@ public final class BuiltinAuthenticator {
             JwtVerifier jwt, Clock clock) {
         this.store = store;
         this.lockout = lockout;
+        this.addressLockout = lockout;
         this.allowInsecureTransport = allowInsecureTransport;
         this.basicEnabled = basicEnabled;
         this.tokensEnabled = tokensEnabled;
@@ -101,8 +103,13 @@ public final class BuiltinAuthenticator {
         JwtVerifier jwt = jwtConfig.bool("enabled", false)
                 ? JwtVerifier.fromConfig(jwtConfig, OutboundTls.context(tls.sub("outbound")), insecure)
                 : null;
-        return new BuiltinAuthenticator(new UserStore(usersFile), lockout, insecure,
+        BuiltinAuthenticator authenticator = new BuiltinAuthenticator(new UserStore(usersFile), lockout, insecure,
                 b.bool("basic", true), b.bool("tokens", true), mtls.bool("enabled", false), revocation, jwt, clock);
+        int addressAttempts = lo.integer("addressMaxAttempts", 50);
+        authenticator.addressLockout(addressAttempts <= 0 ? null : new Lockout(Math.max(2, addressAttempts),
+                Duration.ofSeconds(lo.longValue("windowSeconds", 300)),
+                Duration.ofSeconds(lo.longValue("lockSeconds", 900)), clock));
+        return authenticator;
     }
 
     /**
@@ -111,6 +118,15 @@ public final class BuiltinAuthenticator {
      */
     public void deferUnknownUsers(boolean defer) {
         this.deferUnknownUsers = defer;
+    }
+
+    /**
+     * Failures are also counted per client address, with its own (higher) threshold: behind a
+     * reverse proxy all clients share one address, and a low limit would let one attacker lock
+     * out everybody. {@code null} disables the per-address lockout.
+     */
+    public void addressLockout(Lockout lockout) {
+        this.addressLockout = lockout;
     }
 
     public UserStore store() {
@@ -157,6 +173,18 @@ public final class BuiltinAuthenticator {
         return challenges;
     }
 
+    private boolean addressLocked(String key) {
+        Lockout l = addressLockout;
+        return l != null && l.isLocked(key);
+    }
+
+    private void addressFailure(String key) {
+        Lockout l = addressLockout;
+        if (l != null) {
+            l.recordFailure(key);
+        }
+    }
+
     private boolean secure(AuthRequest request) {
         return request.secure() || allowInsecureTransport;
     }
@@ -176,7 +204,7 @@ public final class BuiltinAuthenticator {
         char[] password = decoded.substring(colon + 1).toCharArray();
         String userKey = "user:" + name;
         String addressKey = "addr:" + request.remoteAddress();
-        if (lockout.isLocked(userKey) || lockout.isLocked(addressKey)) {
+        if (lockout.isLocked(userKey) || addressLocked(addressKey)) {
             return AuthResult.locked(name);
         }
         UserStore.User user = store.user(name);
@@ -187,7 +215,7 @@ public final class BuiltinAuthenticator {
         java.util.Arrays.fill(password, '\0');
         if (!ok) {
             lockout.recordFailure(userKey);
-            lockout.recordFailure(addressKey);
+            addressFailure(addressKey);
             return AuthResult.failed(name, "wrong user name or password");
         }
         lockout.recordSuccess(userKey);
@@ -235,13 +263,13 @@ public final class BuiltinAuthenticator {
 
     private AuthResult token(String presented, AuthRequest request) {
         String addressKey = "addr:" + request.remoteAddress();
-        if (lockout.isLocked(addressKey)) {
+        if (addressLocked(addressKey)) {
             return AuthResult.locked(null);
         }
         ApiTokens.Parsed parsed = ApiTokens.parse(presented);
         UserStore.Token token = parsed == null ? null : store.token(parsed.id());
         if (token == null || !ApiTokens.verify(parsed.secret(), token.hash())) {
-            lockout.recordFailure(addressKey);
+            addressFailure(addressKey);
             return AuthResult.failed(parsed == null ? null : "token:" + parsed.id(), "unknown or wrong API token");
         }
         if (token.expires() != null && clock.instant().isAfter(token.expires())) {
@@ -252,14 +280,14 @@ public final class BuiltinAuthenticator {
 
     private AuthResult jwt(String presented, AuthRequest request) {
         String addressKey = "addr:" + request.remoteAddress();
-        if (lockout.isLocked(addressKey)) {
+        if (addressLocked(addressKey)) {
             return AuthResult.locked(null);
         }
         try {
             JwtVerifier.Verified v = jwt.verify(presented);
             return AuthResult.success(new RocotoIdentity(v.name(), v.roles(), "jwt"));
         } catch (JwtVerifier.JwtException e) {
-            lockout.recordFailure(addressKey);
+            addressFailure(addressKey);
             return AuthResult.failed(null, "JWT rejected: " + e.getMessage());
         }
     }

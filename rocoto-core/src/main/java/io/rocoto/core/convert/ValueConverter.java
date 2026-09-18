@@ -49,8 +49,10 @@ public final class ValueConverter {
     private final int maxCollectionSize;
     private final Predicate<String> maskedKey;
     private final boolean tabularAsRows;
+    private final boolean objectNameAsMap;
 
     private ValueConverter(Builder b) {
+        this.objectNameAsMap = b.objectNameAsMap;
         this.numberMode = b.numberMode;
         this.maxDepth = b.maxDepth;
         this.maxCollectionSize = b.maxCollectionSize;
@@ -80,7 +82,7 @@ public final class ValueConverter {
             return Base64.getEncoder().encodeToString(bytes);
         }
         if (value instanceof ObjectName on) {
-            return on.getCanonicalName();
+            return objectNameAsMap ? Map.of("objectName", on.getCanonicalName()) : on.getCanonicalName();
         }
         if (value instanceof Enum<?> e) {
             return e.name();
@@ -163,6 +165,19 @@ public final class ValueConverter {
         // Jolokia layout: nested maps keyed by the index values.
         List<String> indexNames = td.getTabularType().getIndexNames();
         Map<String, Object> root = new LinkedHashMap<>();
+        if (indexNames.equals(List.of("key"))
+                && td.getTabularType().getRowType().keySet().equals(java.util.Set.of("key", "value"))) {
+            // An MXBean Map<K,V>: Jolokia renders it as a plain JSON object.
+            for (Object rowObj : td.values()) {
+                if (root.size() >= maxCollectionSize) {
+                    break;
+                }
+                CompositeData row = (CompositeData) rowObj;
+                String key = String.valueOf(convert(row.get("key"), maxDepth));
+                root.put(key, maskedKey.test(key) ? MASK : convert(row.get("value"), depth + 1));
+            }
+            return root;
+        }
         int count = 0;
         for (Object rowObj : td.values()) {
             if (count++ >= maxCollectionSize) {
@@ -202,6 +217,7 @@ public final class ValueConverter {
         private int maxCollectionSize = 10_000;
         private Predicate<String> maskedKey = k -> false;
         private boolean tabularAsRows = true;
+        private boolean objectNameAsMap;
 
         private Builder() {
         }
@@ -230,6 +246,12 @@ public final class ValueConverter {
         /** {@code true}: tabular data as a list of rows (native API). {@code false}: Jolokia's nested maps. */
         public Builder tabularAsRows(boolean rows) {
             this.tabularAsRows = rows;
+            return this;
+        }
+
+        /** Jolokia renders ObjectName values as {@code {"objectName": "..."}}. */
+        public Builder objectNameAsMap(boolean asMap) {
+            this.objectNameAsMap = asMap;
             return this;
         }
 

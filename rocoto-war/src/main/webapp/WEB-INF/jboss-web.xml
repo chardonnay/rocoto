@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WildFly / JBoss EAP. "other" is the application-security-domain every default WildFly
+  configuration ships (backed by Elytron's ApplicationDomain). Point it to your own domain with a
+  deployment overlay or by editing this file - see docs/guide/10-wildfly-elytron.md.
+-->
+<jboss-web xmlns="http://www.jboss.com/xml/ns/javaee">
+  <context-root>/rocoto</context-root>
+  <security-domain>other</security-domain>
+</jboss-web>

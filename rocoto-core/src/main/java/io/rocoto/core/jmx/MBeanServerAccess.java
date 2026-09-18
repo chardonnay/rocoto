@@ -76,6 +76,26 @@ public final class MBeanServerAccess implements MBeanAccess {
         return call(name, server -> server.invoke(name, operation, args, signature));
     }
 
+    @Override
+    public void addNotificationListener(ObjectName name, javax.management.NotificationListener listener) {
+        call(name, server -> {
+            server.addNotificationListener(name, listener, null, null);
+            return null;
+        });
+    }
+
+    @Override
+    public void removeNotificationListener(ObjectName name, javax.management.NotificationListener listener) {
+        try {
+            call(name, server -> {
+                server.removeNotificationListener(name, listener);
+                return null;
+            });
+        } catch (MBeanAccessException e) {
+            // MBean or listener already gone: nothing left to clean up.
+        }
+    }
+
     private MBeanServerConnection find(ObjectName name) {
         for (MBeanServerConnection server : servers) {
             try {

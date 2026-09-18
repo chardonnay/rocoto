@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Gives the deployment visibility of the Elytron API so the caller's SecurityIdentity can be
+  propagated to streaming threads (WildFlyAdapter.captureIdentity). Rocoto only uses it reflectively.
+-->
+<jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.3">
+  <deployment>
+    <dependencies>
+      <module name="org.wildfly.security.elytron" optional="true"/>
+    </dependencies>
+  </deployment>
+</jboss-deployment-structure>

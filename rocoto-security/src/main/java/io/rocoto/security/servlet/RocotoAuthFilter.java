@@ -65,7 +65,36 @@ public class RocotoAuthFilter extends HttpFilter {
             return;
         }
         request.setAttribute(RocotoSecurity.IDENTITY_ATTRIBUTE, identity);
-        chain.doFilter(request, response);
+        chain.doFilter(new IdentityRequest(request, identity), response);
+    }
+
+    /**
+     * Presents the Rocoto identity through the standard servlet API. This is what carries the
+     * identity across a WebSocket upgrade, where request attributes are not available.
+     */
+    private static final class IdentityRequest extends jakarta.servlet.http.HttpServletRequestWrapper {
+
+        private final RocotoPrincipal principal;
+
+        IdentityRequest(HttpServletRequest request, RocotoIdentity identity) {
+            super(request);
+            this.principal = new RocotoPrincipal(identity);
+        }
+
+        @Override
+        public Principal getUserPrincipal() {
+            return principal;
+        }
+
+        @Override
+        public boolean isUserInRole(String role) {
+            return principal.identity().roles().contains(role);
+        }
+
+        @Override
+        public String getRemoteUser() {
+            return principal.getName();
+        }
     }
 
     private RocotoIdentity authenticate(HttpServletRequest request, HttpServletResponse response,

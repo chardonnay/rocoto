@@ -32,6 +32,10 @@
     <module>rocoto-security</module>
     <module>rocoto-adapters</module>
     <module>rocoto-metrics</module>
+    <module>rocoto-api</module>
+    <module>rocoto-compat-jolokia</module>
+    <module>rocoto-war</module>
+    <module>rocoto-it</module>
   </modules>
 
   <properties>
@@ -66,6 +70,16 @@
       <dependency>
         <groupId>io.rocoto</groupId>
         <artifactId>rocoto-metrics</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.rocoto</groupId>
+        <artifactId>rocoto-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.rocoto</groupId>
+        <artifactId>rocoto-compat-jolokia</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

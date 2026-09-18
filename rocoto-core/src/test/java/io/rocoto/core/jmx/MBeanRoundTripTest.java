@@ -73,8 +73,7 @@ class MBeanRoundTripTest {
         // MXBean maps are TabularData: rows in the native API, index-keyed maps in Jolokia mode.
         assertEquals(List.of(Map.of("key", "one", "value", 1), Map.of("key", "two", "value", 2)),
                 read("Counts", TYPED));
-        assertEquals(Map.of("one", Map.of("key", "one", "value", 1), "two", Map.of("key", "two", "value", 2)),
-                read("Counts", PLAIN));
+        assertEquals(Map.of("one", 1, "two", 2), read("Counts", PLAIN));
     }
 
     @Test

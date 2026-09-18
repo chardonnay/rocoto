@@ -35,6 +35,9 @@ public final class MetricsCollector {
         Map<String, MetricFamily> families = new LinkedHashMap<>();
         for (MetricRule rule : rules) {
             for (ObjectName name : pipeline.search(ctx, rule.mbean())) {
+                if (!pipeline.mayRead(ctx, name, rule.attribute())) {
+                    continue;
+                }
                 Object value;
                 try {
                     value = pipeline.read(ctx, name, rule.attribute());

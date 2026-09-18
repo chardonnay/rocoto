@@ -25,4 +25,9 @@ public interface MBeanAccess {
     void setAttribute(ObjectName name, String attribute, Object value);
 
     Object invoke(ObjectName name, String operation, Object[] args, String[] signature);
+
+    /** Registers a JMX notification listener. The caller must remove it again. */
+    void addNotificationListener(ObjectName name, javax.management.NotificationListener listener);
+
+    void removeNotificationListener(ObjectName name, javax.management.NotificationListener listener);
 }
