@@ -30,6 +30,8 @@
   <modules>
     <module>rocoto-core</module>
     <module>rocoto-security</module>
+    <module>rocoto-adapters</module>
+    <module>rocoto-metrics</module>
   </modules>
 
   <properties>
@@ -54,6 +56,16 @@
       <dependency>
         <groupId>io.rocoto</groupId>
         <artifactId>rocoto-security</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.rocoto</groupId>
+        <artifactId>rocoto-adapters</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.rocoto</groupId>
+        <artifactId>rocoto-metrics</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

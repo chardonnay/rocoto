@@ -1,0 +1,18 @@
+# Apache Tomcat. The domain is a wildcard because embedded Tomcat uses "Tomcat" instead of "Catalina".
+rules:
+  - { mbean: "*:type=ThreadPool,name=*", attribute: currentThreadCount, name: tomcat_threads_current, help: "Threads in the connector pool", labels: { connector: "${name}" } }
+  - { mbean: "*:type=ThreadPool,name=*", attribute: currentThreadsBusy, name: tomcat_threads_busy, help: "Busy connector threads", labels: { connector: "${name}" } }
+  - { mbean: "*:type=ThreadPool,name=*", attribute: maxThreads, name: tomcat_threads_max, help: "Maximum connector threads", labels: { connector: "${name}" } }
+  - { mbean: "*:type=ThreadPool,name=*", attribute: connectionCount, name: tomcat_connections_current, help: "Open connections", labels: { connector: "${name}" } }
+  - { mbean: "*:type=GlobalRequestProcessor,name=*", attribute: requestCount, name: tomcat_requests_total, type: counter, help: "Requests processed", labels: { connector: "${name}" } }
+  - { mbean: "*:type=GlobalRequestProcessor,name=*", attribute: errorCount, name: tomcat_request_errors_total, type: counter, help: "Requests that ended in an error", labels: { connector: "${name}" } }
+  - { mbean: "*:type=GlobalRequestProcessor,name=*", attribute: processingTime, scale: 0.001, name: tomcat_request_processing_seconds_total, type: counter, help: "Total request processing time", labels: { connector: "${name}" } }
+  - { mbean: "*:type=GlobalRequestProcessor,name=*", attribute: bytesSent, name: tomcat_sent_bytes_total, type: counter, help: "Bytes sent", labels: { connector: "${name}" } }
+  - { mbean: "*:type=GlobalRequestProcessor,name=*", attribute: bytesReceived, name: tomcat_received_bytes_total, type: counter, help: "Bytes received", labels: { connector: "${name}" } }
+  - { mbean: "*:type=Manager,host=*,context=*", attribute: activeSessions, name: tomcat_sessions_active, help: "Active sessions", labels: { host: "${host}", context: "${context}" } }
+  - { mbean: "*:type=Manager,host=*,context=*", attribute: sessionCounter, name: tomcat_sessions_created_total, type: counter, help: "Sessions created", labels: { host: "${host}", context: "${context}" } }
+  - { mbean: "*:type=Manager,host=*,context=*", attribute: expiredSessions, name: tomcat_sessions_expired_total, type: counter, help: "Sessions expired", labels: { host: "${host}", context: "${context}" } }
+  - { mbean: "*:type=Manager,host=*,context=*", attribute: rejectedSessions, name: tomcat_sessions_rejected_total, type: counter, help: "Sessions rejected", labels: { host: "${host}", context: "${context}" } }
+  - { mbean: "*:type=DataSource,*", attribute: numActive, name: tomcat_datasource_connections_active, help: "Active JDBC connections", labels: { datasource: "${name}", context: "${context}" } }
+  - { mbean: "*:type=DataSource,*", attribute: numIdle, name: tomcat_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${name}", context: "${context}" } }
+  - { mbean: "*:type=DataSource,*", attribute: maxTotal, name: tomcat_datasource_connections_max, help: "Maximum JDBC connections", labels: { datasource: "${name}", context: "${context}" } }

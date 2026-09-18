@@ -1,0 +1,4 @@
+io.rocoto.adapters.WildFlyAdapter
+io.rocoto.adapters.PayaraAdapter
+io.rocoto.adapters.TomcatAdapter
+io.rocoto.adapters.GenericAdapter

@@ -1,0 +1,28 @@
+# JVM metrics available on every server.
+rules:
+  - { mbean: "java.lang:type=Memory", attribute: HeapMemoryUsage, path: used, name: jvm_memory_heap_used_bytes, help: "Used heap memory" }
+  - { mbean: "java.lang:type=Memory", attribute: HeapMemoryUsage, path: committed, name: jvm_memory_heap_committed_bytes, help: "Committed heap memory" }
+  - { mbean: "java.lang:type=Memory", attribute: HeapMemoryUsage, path: max, name: jvm_memory_heap_max_bytes, help: "Maximum heap memory" }
+  - { mbean: "java.lang:type=Memory", attribute: NonHeapMemoryUsage, path: used, name: jvm_memory_nonheap_used_bytes, help: "Used non-heap memory" }
+  - { mbean: "java.lang:type=Memory", attribute: NonHeapMemoryUsage, path: committed, name: jvm_memory_nonheap_committed_bytes, help: "Committed non-heap memory" }
+  - { mbean: "java.lang:type=MemoryPool,name=*", attribute: Usage, path: used, name: jvm_memory_pool_used_bytes, help: "Used memory per pool", labels: { pool: "${name}" } }
+  - { mbean: "java.lang:type=MemoryPool,name=*", attribute: Usage, path: max, name: jvm_memory_pool_max_bytes, help: "Maximum memory per pool", labels: { pool: "${name}" } }
+  - { mbean: "java.nio:type=BufferPool,name=*", attribute: MemoryUsed, name: jvm_buffer_pool_used_bytes, help: "Memory used by NIO buffer pools", labels: { pool: "${name}" } }
+  - { mbean: "java.nio:type=BufferPool,name=*", attribute: Count, name: jvm_buffer_pool_buffers, help: "Buffers per NIO buffer pool", labels: { pool: "${name}" } }
+  - { mbean: "java.lang:type=GarbageCollector,name=*", attribute: CollectionCount, name: jvm_gc_collections_total, type: counter, help: "Garbage collections", labels: { gc: "${name}" } }
+  - { mbean: "java.lang:type=GarbageCollector,name=*", attribute: CollectionTime, scale: 0.001, name: jvm_gc_collection_seconds_total, type: counter, help: "Time spent in garbage collection", labels: { gc: "${name}" } }
+  - { mbean: "java.lang:type=Threading", attribute: ThreadCount, name: jvm_threads_current, help: "Live threads" }
+  - { mbean: "java.lang:type=Threading", attribute: DaemonThreadCount, name: jvm_threads_daemon, help: "Live daemon threads" }
+  - { mbean: "java.lang:type=Threading", attribute: PeakThreadCount, name: jvm_threads_peak, help: "Peak live threads" }
+  - { mbean: "java.lang:type=Threading", attribute: TotalStartedThreadCount, name: jvm_threads_started_total, type: counter, help: "Threads started" }
+  - { mbean: "java.lang:type=ClassLoading", attribute: LoadedClassCount, name: jvm_classes_loaded, help: "Currently loaded classes" }
+  - { mbean: "java.lang:type=ClassLoading", attribute: TotalLoadedClassCount, name: jvm_classes_loaded_total, type: counter, help: "Classes loaded since start" }
+  - { mbean: "java.lang:type=ClassLoading", attribute: UnloadedClassCount, name: jvm_classes_unloaded_total, type: counter, help: "Classes unloaded since start" }
+  - { mbean: "java.lang:type=OperatingSystem", attribute: ProcessCpuLoad, name: process_cpu_load_ratio, help: "Recent CPU usage of the JVM process (0..1)" }
+  - { mbean: "java.lang:type=OperatingSystem", attribute: ProcessCpuTime, scale: 0.000000001, name: process_cpu_seconds_total, type: counter, help: "CPU time used by the JVM process" }
+  - { mbean: "java.lang:type=OperatingSystem", attribute: SystemLoadAverage, name: system_load_average_1m, help: "System load average" }
+  - { mbean: "java.lang:type=OperatingSystem", attribute: AvailableProcessors, name: system_cpu_count, help: "Available processors" }
+  - { mbean: "java.lang:type=OperatingSystem", attribute: OpenFileDescriptorCount, name: process_open_fds, help: "Open file descriptors" }
+  - { mbean: "java.lang:type=OperatingSystem", attribute: MaxFileDescriptorCount, name: process_max_fds, help: "Maximum file descriptors" }
+  - { mbean: "java.lang:type=Runtime", attribute: Uptime, scale: 0.001, name: process_uptime_seconds, help: "JVM uptime" }
+  - { mbean: "java.lang:type=Runtime", attribute: StartTime, scale: 0.001, name: process_start_time_seconds, help: "JVM start time as unix timestamp" }
