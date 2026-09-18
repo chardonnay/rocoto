@@ -202,7 +202,13 @@ public final class JwtVerifier {
                 : value instanceof String s ? List.of(s.trim().split("[\\s,]+")) : List.of();
         for (Object r : raw) {
             String role = String.valueOf(r);
-            roles.add(roleMapping.getOrDefault(role, role));
+            if (roleMapping.isEmpty()) {
+                roles.add(role);
+            } else if (roleMapping.containsKey(role)) {
+                // With a mapping in place only mapped roles count: a role that merely happens to be
+                // called "rocoto-admin" at the identity provider must not grant anything by accident.
+                roles.add(roleMapping.get(role));
+            }
         }
         return roles;
     }

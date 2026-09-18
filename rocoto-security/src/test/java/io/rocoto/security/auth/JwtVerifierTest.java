@@ -100,7 +100,7 @@ class JwtVerifierTest {
     void acceptsRsaAndEcTokensAndMapsRoles() throws Exception {
         JwtVerifier.Verified v = verifier.verify(token("RS256", "r1", rsa.getPrivate(), "SHA256withRSA", validClaims()));
         assertEquals("ada", v.name());
-        assertEquals(Set.of("rocoto-admin", "rocoto-reader"), v.roles());
+        assertEquals(Set.of("rocoto-admin"), v.roles(), "with a roleMapping only mapped roles count");
         verifier.verify(token("ES256", "e1", ec.getPrivate(), "SHA256withECDSAinP1363Format", validClaims()));
     }
 

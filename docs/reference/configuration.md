@@ -70,7 +70,7 @@ auth:
       # publicKey: |                              # alternative to jwksUrl (PEM, RSA or EC)
       nameClaim: sub
       rolesClaim: roles         # dotted paths descend into objects: realm_access.roles
-      roleMapping: {}           # e.g. { ops-admin: rocoto-admin }
+      roleMapping: {}           # e.g. { ops-admin: rocoto-admin }; if set, unmapped roles are dropped
       clockSkewSeconds: 60
 
 policy:

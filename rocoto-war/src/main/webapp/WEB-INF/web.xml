@@ -63,9 +63,9 @@
 
   <!--
     Used in auth.mode "container" and "chain": the mechanism the application server offers when
-    the filter calls HttpServletRequest.authenticate(). WildFly/Elytron overrides the mechanism
-    through the http-authentication-factory of the mapped security domain (BASIC, CLIENT_CERT,
-    BEARER_TOKEN, ...), so this value is only the fallback.
+    the filter calls HttpServletRequest.authenticate(). On WildFly/Elytron the mechanisms of the
+    http-authentication-factory replace this value when the application-security-domain is
+    configured with override-deployment-config=true (BASIC, CLIENT_CERT, BEARER_TOKEN, ...).
   -->
   <login-config>
     <auth-method>BASIC</auth-method>

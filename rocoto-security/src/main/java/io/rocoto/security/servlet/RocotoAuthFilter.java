@@ -144,6 +144,12 @@ public class RocotoAuthFilter extends HttpFilter {
                 authenticated = false;
             }
             if (!authenticated) {
+                if (request.getHeader("Authorization") != null) {
+                    // Credentials were presented and the application server rejected them.
+                    security.audit().log(new AuditEvent(Instant.now(), null, "container", request.getRemoteAddr(),
+                            "auth", "LOGIN", null, null, Outcome.AUTH_FAILED,
+                            "rejected by the application server's security domain", null));
+                }
                 if (!response.isCommitted() && response.getStatus() != HttpServletResponse.SC_UNAUTHORIZED) {
                     // The container has not written a challenge of its own.
                     response.resetBuffer();

@@ -111,7 +111,16 @@ public final class RequestPipeline {
             MBeanMetadata.attribute(access.info(name), attribute);
             return ValueConverter.MASK;
         }
-        Object value = access.getAttribute(name, attribute);
+        Object value;
+        try {
+            value = access.getAttribute(name, attribute);
+        } catch (MBeanAccessException e) {
+            if (e.kind() == MBeanAccessException.Kind.FORBIDDEN_BY_SERVER) {
+                // Rocoto's policy allowed it, the application server (e.g. WildFly management RBAC) did not.
+                record(ctx, target, Outcome.DENIED, "denied by the application server", null);
+            }
+            throw e;
+        }
         if (audit.auditReads()) {
             record(ctx, target, Outcome.ALLOWED, null, null);
         }
