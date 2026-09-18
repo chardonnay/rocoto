@@ -27,7 +27,11 @@ public class MetricsServlet extends HttpServlet {
                 throw new ApiException(HttpServletResponse.SC_NOT_FOUND, "Metrics are disabled");
             }
             CallContext ctx = Http.context(request, "metrics");
-            List<MetricFamily> families = runtime.metrics().collect(ctx, runtime.pipeline());
+            List<MetricFamily> families = new java.util.ArrayList<>(
+                    runtime.metrics().collect(ctx, runtime.pipeline()));
+            if (runtime.tlsProbe() != null) {
+                families.addAll(runtime.tlsProbe().metrics());
+            }
             boolean openMetrics = TextFormat.wantsOpenMetrics(request.getHeader("Accept"));
             response.setStatus(200);
             response.setContentType(openMetrics ? TextFormat.OPENMETRICS : TextFormat.PROMETHEUS);

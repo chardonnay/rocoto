@@ -99,6 +99,20 @@ class BuiltinAuthIT {
         assertTrue(r.headers().firstValue("Set-Cookie").isEmpty());
     }
 
+    @Test
+    void openApiDocumentAndSchemaAreServed() throws Exception {
+        Map<String, Object> openApi = TestServer.json(
+                server.get("/api/v1/openapi.json", TestServer.basic(TestServer.READER)));
+        assertEquals("3.0.3", openApi.get("openapi"));
+        assertTrue(((Map<?, ?>) openApi.get("paths")).containsKey("/mbeans/{name}/attributes/{attribute}"));
+        Map<String, Object> schema = TestServer.json(
+                server.get("/api/v1/schema?mbean=java.lang:type=Memory", TestServer.basic(TestServer.READER)));
+        assertTrue(((Map<?, ?>) schema.get("properties")).containsKey("HeapMemoryUsage"));
+        Map<String, Object> health = TestServer.json(
+                server.get("/api/v1/health", TestServer.basic(TestServer.READER)));
+        assertEquals("WARN", health.get("status"), "allowInsecureTransport must show up as a warning");
+    }
+
     // ---- CSRF / CORS ---------------------------------------------------------------------
 
     @Test

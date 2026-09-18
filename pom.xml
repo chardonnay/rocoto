@@ -34,6 +34,7 @@
     <module>rocoto-metrics</module>
     <module>rocoto-api</module>
     <module>rocoto-compat-jolokia</module>
+    <module>rocoto-tools</module>
     <module>rocoto-war</module>
     <module>rocoto-it</module>
   </modules>

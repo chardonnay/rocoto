@@ -37,6 +37,11 @@ public final class MetricFamily {
         return samples;
     }
 
+    /** Adds a sample unless the same label set is already present. */
+    public void addSample(Map<String, String> labels, double value) {
+        add(labels, value);
+    }
+
     void add(Map<String, String> labels, double value) {
         for (Sample s : samples) {
             if (s.labels().equals(labels)) {

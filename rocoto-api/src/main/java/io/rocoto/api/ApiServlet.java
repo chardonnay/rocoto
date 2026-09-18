@@ -148,7 +148,10 @@ public class ApiServlet extends HttpServlet {
         if (rt.config().bool("auth.allowInsecureTransport", false)) {
             warnings.add("auth.allowInsecureTransport is enabled");
         }
-        out.put("status", "UP");
+        if (rt.tlsProbe() != null) {
+            warnings.addAll(rt.tlsProbe().warnings());
+        }
+        out.put("status", warnings.isEmpty() ? "UP" : "WARN");
         out.put("version", rt.version());
         out.put("adapter", rt.adapter().id());
         out.put("visibleMBeans", rt.pipeline().search(ctx, null).size());

@@ -4,6 +4,15 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Rocoto targets Jakarta EE 10; newer API major/minor versions belong to later platform releases.
+      - dependency-name: "jakarta.servlet:jakarta.servlet-api"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "jakarta.websocket:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Tomcat 10.1 is the Jakarta EE 10 line used by the integration tests.
+      - dependency-name: "org.apache.tomcat.embed:*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

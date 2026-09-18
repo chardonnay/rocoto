@@ -37,6 +37,7 @@ public final class RocotoRuntime implements AutoCloseable {
     private final MetricsCollector metrics;
     private final OtlpExporter otlp;
     private final SubscriptionManager subscriptions;
+    private final TlsSelfProbe tlsProbe;
     private final String version;
 
     private RocotoRuntime(ConfigLoader.Loaded loaded, ClassLoader classLoader) {
@@ -54,6 +55,7 @@ public final class RocotoRuntime implements AutoCloseable {
         this.otlp = metrics == null ? null : OtlpExporter.start(metricsConfig.sub("otlp"),
                 OutboundTls.context(config.sub("tls.outbound")), metrics, pipeline);
         this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"));
+        this.tlsProbe = TlsSelfProbe.start(config.sub("tls.selfProbe"));
     }
 
     /** Builds the runtime. Any configuration error aborts start-up: Rocoto fails closed. */
@@ -99,6 +101,11 @@ public final class RocotoRuntime implements AutoCloseable {
         return subscriptions;
     }
 
+    /** @return the TLS watchdog, or {@code null} if {@code tls.selfProbe.url} is not set */
+    public TlsSelfProbe tlsProbe() {
+        return tlsProbe;
+    }
+
     public String version() {
         return version;
     }
@@ -121,6 +128,9 @@ public final class RocotoRuntime implements AutoCloseable {
             current = null;
         }
         subscriptions.close();
+        if (tlsProbe != null) {
+            tlsProbe.close();
+        }
         if (otlp != null) {
             otlp.close();
         }
