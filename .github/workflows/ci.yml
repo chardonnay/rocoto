@@ -87,6 +87,10 @@ jobs:
         tag: ['10.0.27-jdk17', '10.1.0-jdk17', '10.1.20-jdk17', '10.1-jdk25']
     env:
       TOMCAT_IMAGE: tomcat:${{ matrix.tag }}
+      # The 2022 images bundle JDK 17.0.4, whose container detection throws a NullPointerException
+      # on current kernels with cgroup v2 (JDK-8287073, fixed in 17.0.5): the java.lang MXBeans
+      # are then never registered. Not a Rocoto problem - switch the detection off for old images.
+      TOMCAT_JAVA_OPTS: ${{ startsWith(matrix.tag, '10.1.0') && '-XX:-UseContainerSupport' || '' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6

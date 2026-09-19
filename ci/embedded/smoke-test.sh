@@ -44,11 +44,11 @@ common_checks() {
     -d '{"mbean":"java.lang:type=Memory","operation":"gc"}' "$base/api/v1/exec")"
   check "form posts are rejected" 415 "$(status -u "otto:$PASSWORD" -d 'x=y' "$base/api/v1/exec")"
   check "unknown path" 404 "$(status -u "rita:$PASSWORD" "$base/nope")"
-  check "JVM metrics" true "$(curl -sk -H "Authorization: Bearer $TOKEN" "$base/metrics" | grep -q '^jvm_memory_heap_used_bytes ' && echo true || echo false)"
+  check "JVM metrics" true "$(curl -sk -H "Authorization: Bearer $TOKEN" "$base/metrics" | grep -c '^jvm_memory_heap_used_bytes ' >/dev/null && echo true || echo false)"
   check "Jolokia read" 200 "$(curl -sk -u "rita:$PASSWORD" "$base/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
   local sse
   sse="$(curl -sk -N --max-time 4 -u "rita:$PASSWORD" "$base/api/v1/subscribe?mbean=java.lang:type=Runtime&attribute=Uptime&interval=500" || true)"
-  check "SSE delivers values" true "$(echo "$sse" | grep -q '^event: value' && echo true || echo false)"
+  check "SSE delivers values" true "$(echo "$sse" | grep -c '^event: value' >/dev/null && echo true || echo false)"
   check "three requests share one connection (keep-alive)" "1 0 0" \
     "$(curl -sk -u "rita:$PASSWORD" -o /dev/null -o /dev/null -o /dev/null -w '%{num_connects} ' "$base/api/v1/server" "$base/api/v1/server" "$base/api/v1/server" | xargs)"
 }
@@ -111,7 +111,7 @@ done
 echo "auth.mode other than builtin is refused (there is no container)"
 printf 'auth:\n  mode: chain\n' > "$WORK/rocoto-chain.yaml"
 OUT="$(java -Drocoto.config="$WORK/rocoto-chain.yaml" -jar "$ROOT/rocoto-netty/target/rocoto-netty-$VERSION-all.jar" 2>&1 || true)"
-check "clear error message" true "$(echo "$OUT" | grep -q 'set auth.mode: builtin' && echo true || echo false)"
+check "clear error message" true "$(echo "$OUT" | grep -c 'set auth.mode: builtin' >/dev/null && echo true || echo false)"
 
 if [ "$FAILED" = "1" ]; then echo "embedded smoke test FAILED"; exit 1; fi
 echo "embedded smoke test passed"

@@ -114,14 +114,14 @@ check "ObjectName in the URL path" 200 "$(status -u "rita:$PASSWORD" "$BASE/api/
 echo "Metrics, Jolokia compatibility, streaming"
 METRICS="$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/metrics")"
 for metric in jvm_memory_heap_used_bytes tomcat_threads_busy 'tomcat_datasource_connections_max{datasource="demoDS"'; do
-  check "metric $metric" true "$(echo "$METRICS" | grep -qF "$metric" && echo true || echo false)"
+  check "metric $metric" true "$(echo "$METRICS" | grep -cF "$metric" >/dev/null && echo true || echo false)"
 done
 check "Jolokia read" 200 "$(curl -s -u "rita:$PASSWORD" "$BASE/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
 check "WebSocket handshake" 101 "$(status --http1.1 --max-time 5 -u "rita:$PASSWORD" \
   -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
   "$BASE/api/v1/ws")"
 SSE="$(curl -s -N --max-time 5 -u "rita:$PASSWORD" "$BASE/api/v1/subscribe?mbean=java.lang:type=Runtime&attribute=Uptime&interval=500" || true)"
-check "SSE delivers values" true "$(echo "$SSE" | grep -q '^event: value' && echo true || echo false)"
+check "SSE delivers values" true "$(echo "$SSE" | grep -c '^event: value' >/dev/null && echo true || echo false)"
 
 if [ "$FAILED" = "1" ]; then echo "TomEE smoke test FAILED ($TOMEE_IMAGE)"; exit 1; fi
 echo "TomEE smoke test passed ($TOMEE_IMAGE)"

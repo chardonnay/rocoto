@@ -164,10 +164,10 @@ check "data source $POOL" true "$(res datasources | jq -r --arg p "$POOL" '[.ite
 METRICS="$(curl -sk -u "ada:$PASSWORD" "$BASE/metrics")"
 for metric in jvm_memory_heap_used_bytes payara_threads_busy payara_jdbc_connections_used payara_sessions_active \
               payara_requests_total payara_request_errors_total; do
-  check "metric $metric" true "$(echo "$METRICS" | grep -q "^$metric" && echo true || echo false)"
+  check "metric $metric" true "$(echo "$METRICS" | grep -c "^$metric" >/dev/null && echo true || echo false)"
 done
 check "one payara_sessions_active series per application" true \
-  "$(echo "$METRICS" | grep -q '^payara_sessions_active{app="rocoto/server"}' && echo true || echo false)"
+  "$(echo "$METRICS" | grep -c '^payara_sessions_active{app="rocoto/server"}' >/dev/null && echo true || echo false)"
 
 if [ "$FAILED" = "1" ]; then echo "$FLAVOR smoke test FAILED ($IMAGE)"; exit 1; fi
 echo "$FLAVOR smoke test passed ($IMAGE)"

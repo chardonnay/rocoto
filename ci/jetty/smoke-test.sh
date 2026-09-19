@@ -132,7 +132,7 @@ check "ObjectName in the URL path" 200 "$(status -u "rita:$PASSWORD" "$BASE/api/
 echo "Metrics, Jolokia compatibility, streaming"
 METRICS="$(curl -sk -H "Authorization: Bearer $TOKEN" "$BASE/metrics")"
 for metric in jvm_memory_heap_used_bytes jetty_threads_busy jetty_threads_max jetty_sessions_active jetty_requests_total; do
-  check "metric $metric" true "$(echo "$METRICS" | grep -q "^$metric" && echo true || echo false)"
+  check "metric $metric" true "$(echo "$METRICS" | grep -c "^$metric" >/dev/null && echo true || echo false)"
 done
 check "Jolokia read" 200 "$(curl -sk -u "rita:$PASSWORD" "$BASE/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
 SSE="$(curl -sk -N --max-time 5 -u "rita:$PASSWORD" "$BASE/api/v1/subscribe?mbean=java.lang:type=Runtime&attribute=Uptime&interval=500" || true)"
@@ -141,7 +141,7 @@ WS_EXPECTED=101
 check "WebSocket handshake (404 without Jetty's WebSocket module)" "$WS_EXPECTED" "$(status --http1.1 --max-time 5 -u "rita:$PASSWORD" \
   -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
   "$BASE/api/v1/ws")"
-check "SSE delivers values" true "$(echo "$SSE" | grep -q '^event: value' && echo true || echo false)"
+check "SSE delivers values" true "$(echo "$SSE" | grep -c '^event: value' >/dev/null && echo true || echo false)"
 
 if [ "$FAILED" = "1" ]; then echo "Jetty smoke test FAILED ($JETTY_IMAGE)"; exit 1; fi
 echo "Jetty smoke test passed ($JETTY_IMAGE, LoginService: $LOGIN_SERVICE)"

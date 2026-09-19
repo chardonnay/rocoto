@@ -80,18 +80,18 @@ check "form posts are rejected" 415 "$(status -u "carl:$ELYTRON_PASSWORD" -d 'x=
 
 echo "Metrics and Jolokia compatibility"
 METRICS="$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/metrics")"
-check "JVM metrics" true "$(echo "$METRICS" | grep -q '^jvm_memory_heap_used_bytes ' && echo true || echo false)"
-check "WildFly metrics" true "$(echo "$METRICS" | grep -q '^wildfly_' && echo true || echo false)"
+check "JVM metrics" true "$(echo "$METRICS" | grep -c '^jvm_memory_heap_used_bytes ' >/dev/null && echo true || echo false)"
+check "WildFly metrics" true "$(echo "$METRICS" | grep -c '^wildfly_' >/dev/null && echo true || echo false)"
 check "data source pool metrics (statistics=pool uses capitalized attribute names)" true \
-  "$(echo "$METRICS" | grep -q '^wildfly_datasource_connections_active{datasource="ExampleDS"}' && echo true || echo false)"
-check "io worker metrics" true "$(echo "$METRICS" | grep -q '^wildfly_io_worker_threads_max' && echo true || echo false)"
+  "$(echo "$METRICS" | grep -c '^wildfly_datasource_connections_active{datasource="ExampleDS"}' >/dev/null && echo true || echo false)"
+check "io worker metrics" true "$(echo "$METRICS" | grep -c '^wildfly_io_worker_threads_max' >/dev/null && echo true || echo false)"
 check "Jolokia read" 200 "$(curl -s -u "rita:$BUILTIN_PASSWORD" "$BASE/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
 check "Jolokia proxy mode does not exist" 403 "$(curl -s -u "rita:$BUILTIN_PASSWORD" -H 'Content-Type: application/json' \
   -d '{"type":"read","mbean":"java.lang:type=Memory","attribute":"Verbose","target":{"url":"service:jmx:rmi:///jndi/ldap://x/y"}}' "$BASE/jolokia" | jq -r .status)"
 
 echo "Streaming"
 SSE="$(curl -s -N --max-time 5 -u "rita:$BUILTIN_PASSWORD" "$BASE/api/v1/subscribe?mbean=java.lang:type=Runtime&attribute=Uptime&interval=500" || true)"
-check "SSE delivers values" true "$(echo "$SSE" | grep -q '^event: value' && echo true || echo false)"
+check "SSE delivers values" true "$(echo "$SSE" | grep -c '^event: value' >/dev/null && echo true || echo false)"
 
 if [ "$FAILED" = "1" ]; then echo "WildFly smoke test FAILED"; exit 1; fi
 echo "WildFly smoke test passed"

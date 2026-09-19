@@ -7,6 +7,7 @@
 # --install all") and executes the checks of examples/tomcat-builtin/test.sh against each.
 #
 # Usage: ci/arch/arch-test.sh [arm64] [amd64]          (default: both)
+# TOMCAT_IMAGE selects the image, TOMCAT_JAVA_OPTS is passed to the JVM (see the tomcat-versions job).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -40,6 +41,7 @@ for arch in "$@"; do
   docker rm -f "$NAME" >/dev/null 2>&1 || true
   docker pull -q --platform "linux/$arch" "$IMAGE" >/dev/null
   docker run -d --platform "linux/$arch" --name "$NAME" -p "$PORT:8080" \
+    ${TOMCAT_JAVA_OPTS:+-e "JAVA_OPTS=$TOMCAT_JAVA_OPTS"} \
     -v "$ROOT/rocoto-war/target/rocoto.war:/usr/local/tomcat/webapps/rocoto.war:ro" \
     -v "$ROOT/examples/demo-app/target/demo-app.war:/usr/local/tomcat/webapps/demo-app.war:ro" \
     -v "$EX/conf/rocoto.yaml:/usr/local/tomcat/conf/rocoto.yaml:ro" \

@@ -215,12 +215,12 @@ CLI
       HANDSHAKE="$(openssl s_client -connect "localhost:$HTTPS_PORT" -servername localhost -status \
         -CAfile "$WORK/certs/ca.crt" < /dev/null 2>&1 || true)"
       check "the listener presents the new server certificate" true \
-        "$(echo "$HANDSHAKE" | grep -q 'CN *= *localhost' && echo true || echo false)"
+        "$(echo "$HANDSHAKE" | grep -c 'CN *= *localhost' >/dev/null && echo true || echo false)"
       check "the server staples an OCSP response" true \
-        "$(echo "$HANDSHAKE" | grep -q 'OCSP Response Status: successful' && echo true || echo false)"
+        "$(echo "$HANDSHAKE" | grep -c 'OCSP Response Status: successful' >/dev/null && echo true || echo false)"
       check "tls check of rocoto-tools sees the stapled response" true \
         "$(java -Djavax.net.ssl.trustStore="$WORK/certs/ca.p12" -Djavax.net.ssl.trustStorePassword="$STORE_PASSWORD" \
-            -jar "$ROOT/rocoto-tools/target/rocoto-tools.jar" tls check "localhost:$HTTPS_PORT" 2>&1 | grep -q 'OCSP stapling: YES' && echo true || echo false)"
+            -jar "$ROOT/rocoto-tools/target/rocoto-tools.jar" tls check "localhost:$HTTPS_PORT" 2>&1 | grep -c 'OCSP stapling: YES' >/dev/null && echo true || echo false)"
       [ "$FAILED" = "0" ] || server_log stapling
       ;;
     oidc)
