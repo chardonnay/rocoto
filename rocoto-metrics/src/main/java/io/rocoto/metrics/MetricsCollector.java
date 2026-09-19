@@ -88,9 +88,17 @@ public final class MetricsCollector {
             Matcher m = TEMPLATE.matcher(template);
             StringBuilder sb = new StringBuilder();
             while (m.find()) {
-                String prop = name.getKeyProperty(m.group(1));
+                // ${prop} or ${prop|basename}: basename keeps the part after the last '/', e.g. for
+                // Jetty 12.1 whose context key is "oejs_Server@<identity hash>/_rocoto"
+                String expression = m.group(1);
+                boolean basename = expression.endsWith("|basename");
+                String prop = name.getKeyProperty(basename
+                        ? expression.substring(0, expression.length() - "|basename".length()) : expression);
                 if (prop != null && prop.startsWith("\"")) {
                     prop = ObjectName.unquote(prop);
+                }
+                if (prop != null && basename) {
+                    prop = prop.substring(prop.lastIndexOf('/') + 1);
                 }
                 m.appendReplacement(sb, Matcher.quoteReplacement(prop == null ? "" : prop));
             }
