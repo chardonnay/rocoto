@@ -395,9 +395,10 @@ curl -s --cacert tls.crt -u ada:demo-password-123 https://localhost:8443/rocoto/
 
 In Prometheus the target `serviceMonitor/rocoto-demo/rocoto-demo/0` is `UP`.
 
-**Not executed:** neither Docker nor a cluster were available when this page was written. The
-manifests were checked for YAML syntax; the response bodies are those of the same Rocoto build on
-an embedded Tomcat, where the HTTPS connector with PEM files was verified as well.
+**Executed** (Docker 29, September 2026): image build and all manifests in a single-node k3s cluster (v1.34) - rollout,
+HTTPS probes, the requests above through `kubectl port-forward`. The `ServiceMonitor` was accepted
+by the Prometheus Operator CRD (v0.76), but no Prometheus Operator was installed, so the `UP`
+target was not observed.
 
 ## Notes
 

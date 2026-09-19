@@ -301,7 +301,9 @@ If the responder is down, `hard-fail` rejects every certificate once the cached 
 
 **What was verified:** the PKI script, the responder, Rocoto's mTLS authentication, the rejection
 of the revoked certificate, hard-fail and stapling were executed with Tomcat 10.1 (JSSE, JDK 21) -
-the outputs above come from that run. The WildFly CLI commands were not executed.
+the outputs above come from that run. The WildFly listener commands and the `rocoto.yaml` above ran on WildFly 40.0.1.Final
+(`ci/wildfly/cli-scripts-test.sh builtin-mtls`): valid certificate 200 (`authenticatedBy: mtls`),
+revoked certificate 401.
 
 ## Notes
 

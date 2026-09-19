@@ -510,7 +510,7 @@ Switch the maintenance mode off again (`{"value":false}`) and drain the queue wi
 ```
 
 All outputs on this page were captured from `rocoto.war` and `demo-app.war` running in an embedded
-Tomcat 10.1 with the configuration shown above; the Docker Compose wrapper was not executed.
+Tomcat 10.1 with the configuration shown above; the Docker Compose project (`examples/tomcat-builtin`) passes `make test` with the same files.
 
 ## Design hints for your own MXBeans
 

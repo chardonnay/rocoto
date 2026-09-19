@@ -585,8 +585,8 @@ With `Accept: application/openmetrics-text` the same endpoint answers in OpenMet
 terminated by `# EOF`. Without a token the answer is `401`.
 
 The metrics output was captured from the same WARs and configuration in an embedded Tomcat. The
-Compose file, the Prometheus configuration and the Grafana provisioning were **not executed**
-(no Docker at hand); the JSON and YAML files were checked for syntax.
+Compose project was executed with Docker (Docker 29, September 2026, Prometheus 2.53.2, Grafana 11.2.0): `make test`
+passes and every query of the provisioned dashboard returns data.
 
 ## For a real server
 
