@@ -67,16 +67,23 @@ curl -u ada https://appserver:8443/rocoto/api/v1/mbeans/java.lang%3Atype%3DMemor
 
 ```mermaid
 flowchart LR
-    client["Client<br/>curl, Prometheus, hawtio, your code"] -->|HTTPS| filter
-    subgraph war["rocoto.war inside the application server"]
-        filter["RocotoAuthFilter<br/>origin check, JSON only,<br/>builtin / container / chain auth"]
-        filter --> endpoints["/api/v1  /metrics  /jolokia<br/>SSE and WebSocket"]
-        endpoints --> pipeline["RequestPipeline<br/>token scope, deny list,<br/>policy, masking, audit"]
-        pipeline --> adapter["Server adapter<br/>WildFly, Tomcat, Payara"]
+    client["Client<br/>curl, Prometheus, hawtio, your code"]
+    subgraph war ["rocoto.war inside the application server"]
+        authfilter["RocotoAuthFilter<br/>origin check, JSON only,<br/>builtin / container / chain auth"]
+        api["REST API v1, metrics, Jolokia protocol<br/>SSE and WebSocket"]
+        pipeline["RequestPipeline<br/>token scope, deny list,<br/>policy, masking, audit"]
+        adapter["Server adapter<br/>WildFly, Tomcat, Jetty, Liberty, Payara"]
     end
-    adapter -->|in-process| mbs[("MBeanServer")]
-    filter -.->|"request.authenticate()"| container["Elytron / realm"]
-    pipeline -.-> audit[["audit log"]]
+    mbeans["MBeanServer"]
+    realm["Elytron / realm of the server"]
+    auditlog["Audit log"]
+    client -->|HTTPS| authfilter
+    authfilter --> api
+    api --> pipeline
+    pipeline --> adapter
+    adapter -->|in-process| mbeans
+    authfilter -->|container login| realm
+    pipeline -->|every decision| auditlog
 ```
 
 Every request – native API, metrics scrape, Jolokia client, stream poll – takes this one path.
