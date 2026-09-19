@@ -1,0 +1,12 @@
+# Open Liberty / WebSphere Liberty. Requires the monitor-1.0 feature (domain WebSphere).
+rules:
+  - { mbean: "WebSphere:type=ThreadPoolStats,*", attribute: PoolSize, name: liberty_threads_current, help: "Threads in the pool", labels: { pool: "${name}" } }
+  - { mbean: "WebSphere:type=ThreadPoolStats,*", attribute: ActiveThreads, name: liberty_threads_busy, help: "Threads executing a task", labels: { pool: "${name}" } }
+  - { mbean: "WebSphere:type=SessionStats,*", attribute: LiveCount, name: liberty_sessions_live, help: "Sessions currently in memory", labels: { app: "${name}" } }
+  - { mbean: "WebSphere:type=SessionStats,*", attribute: ActiveCount, name: liberty_sessions_active, help: "Sessions currently accessed by requests", labels: { app: "${name}" } }
+  - { mbean: "WebSphere:type=SessionStats,*", attribute: CreateCount, name: liberty_sessions_created_total, type: counter, help: "Sessions created", labels: { app: "${name}" } }
+  - { mbean: "WebSphere:type=SessionStats,*", attribute: InvalidatedCountbyTimeout, name: liberty_sessions_expired_total, type: counter, help: "Sessions invalidated by timeout", labels: { app: "${name}" } }
+  - { mbean: "WebSphere:type=ServletStats,*", attribute: RequestCount, name: liberty_servlet_requests_total, type: counter, help: "Requests handled by the servlet", labels: { servlet: "${name}" } }
+  - { mbean: "WebSphere:type=ConnectionPoolStats,*", attribute: ManagedConnectionCount, name: liberty_connectionpool_connections_managed, help: "Managed connections", labels: { pool: "${name}" } }
+  - { mbean: "WebSphere:type=ConnectionPoolStats,*", attribute: FreeConnectionCount, name: liberty_connectionpool_connections_free, help: "Free connections", labels: { pool: "${name}" } }
+  - { mbean: "WebSphere:type=ConnectionPoolStats,*", attribute: WaitTime, name: liberty_connectionpool_wait_time_milliseconds, help: "Average wait time for a connection", labels: { pool: "${name}" } }

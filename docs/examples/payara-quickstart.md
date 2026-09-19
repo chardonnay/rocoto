@@ -1,10 +1,12 @@
 # Payara quickstart (experimental)
 
-> **Payara / GlassFish support is experimental and untested.** Plain MBean access, policy, metrics
-> of the JVM profile and streaming do not depend on the server and are expected to work. The
+> **Payara / GlassFish support is experimental.** The steps on this page are covered by
+> `ci/payara/smoke-test.sh`, which passed on Payara Server 6.2023.10, 6.2025.4, 6.2025.11 and 7.2026.9 (JDK 17/21/25) and Eclipse GlassFish 7.0.15, 7.0.25, 7.1.0 and 8.0.4. GlassFish needs different commands and
+> GlassFish 7 has a URL restriction - see
+> [GlassFish differences](../guide/02-installation.md#glassfish-differences). Plain MBean access, policy, metrics
+> of the JVM profile and streaming do not depend on the server. The
 > normalized resource view and the `payara` metrics profile rely on AMX monitoring MBeans, which
-> only exist after AMX has been started and the monitoring level has been raised. Nothing on this
-> page was executed when it was written - please report what you find.
+> only exist after AMX has been started and the monitoring level has been raised.
 
 ## Goal
 
@@ -51,12 +53,13 @@ chmod 600 $CONF/rocoto-users.yaml
 asadmin start-domain
 asadmin deploy --contextroot rocoto rocoto.war
 
-# Monitoring data (the level is given in the adapter's and the profile's documentation):
-asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container,http-service --level=LOW
+# AMX and monitoring data. One level per module; with LOW Payara 6 and 7 register no *-mon MBeans.
+asadmin set-amx-enabled --enabled=true --dynamic=true
+asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container,http-service --level=HIGH,HIGH,HIGH,HIGH
 ```
 
-AMX itself must be running as well. How it is started depends on the Payara version (JMX client
-connection, `asadmin` command or domain configuration); check `amxLoaded` below.
+Check `amxLoaded` below. The statistics of a JDBC pool appear once the pool has been used
+(`asadmin ping-connection-pool H2Pool` is enough).
 
 ## Expected output
 
@@ -69,7 +72,7 @@ curl -s --cacert payara.crt -u ada https://localhost:8181/rocoto/api/v1/server
 
 - `amxLoaded: false` - AMX is not started: `GET /api/v1/resources/datasources` returns an empty
   `items` list and no `payara_*` metrics appear. Everything else keeps working.
-- `amxLoaded: true` and a monitoring level of at least `LOW` - rows for JDBC pools, thread pools
+- `amxLoaded: true` and the monitoring level `HIGH` - rows for JDBC pools, thread pools
   and sessions, plus `payara_jdbc_connections_used`, `payara_threads_busy`,
   `payara_requests_total`, ...
 

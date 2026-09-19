@@ -52,7 +52,10 @@ public final class RocotoRuntime implements AutoCloseable {
         this.metrics = metricsConfig.bool("enabled", true)
                 ? new MetricsCollector(MetricProfiles.load(metricsConfig, adapter.id(), loaded.directory()))
                 : null;
-        this.otlp = metrics == null ? null : OtlpExporter.start(metricsConfig.sub("otlp"),
+        // The outbound TLS context is only built when something uses it: the JVM's default trust
+        // store may be unusable (GlassFish 8 points it to a domain store without CA certificates).
+        Config otlpConfig = metricsConfig.sub("otlp");
+        this.otlp = metrics == null || !otlpConfig.bool("enabled", false) ? null : OtlpExporter.start(otlpConfig,
                 OutboundTls.context(config.sub("tls.outbound")), metrics, pipeline);
         this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"), security::stillValid);
         this.tlsProbe = TlsSelfProbe.start(config.sub("tls.selfProbe"));

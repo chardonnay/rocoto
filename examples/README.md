@@ -19,6 +19,7 @@ mvn install -DskipTests      # builds rocoto-war/target/rocoto.war and rocoto-to
 | [mtls-ocsp](mtls-ocsp/README.md) | Client certificates with OCSP revocation checking (hard-fail) and OCSP stapling over real TLS (Docker Compose + `gen-certs.sh`) |
 | [clients](clients/README.md) | REST, bulk, exec, SSE and WebSocket clients in Java, Python and Node.js |
 | [custom-adapter](custom-adapter/README.md) | A `ServerAdapter` SPI implementation for a fictional server, added to `rocoto.war` as a jar |
+| [embedded](embedded/README.md) | Rocoto mounted into an Undertow (core) and a Netty application - servers without a servlet container |
 | [kubernetes](kubernetes/README.md) | Deployment, ConfigMap, Secrets, Service and a Prometheus Operator ServiceMonitor |
 
 ## Conventions
@@ -36,11 +37,18 @@ mvn install -DskipTests      # builds rocoto-war/target/rocoto.war and rocoto-to
 
 ## What was verified
 
-The examples were written on a machine without Docker and without a Kubernetes cluster:
+Everything below was executed (Docker 29, September 2026):
 
 - Compiled with `mvn -q package` (JDK 21, `release` 17): `demo-app`, `clients/java`, `custom-adapter`.
-- Executed against `rocoto.war` + `demo-app.war` in an embedded Tomcat 10.1: the configuration of
-  `tomcat-builtin` with its `test.sh`, all three clients, the custom adapter inside a repackaged
-  WAR, and `mtls-ocsp` (certificates, `openssl ocsp` responder, revocation, stapling, `test.sh`).
-- **Not executed:** every `docker-compose.yaml`, the WildFly CLI script, the Keycloak realm import,
-  Prometheus/Grafana provisioning and the Kubernetes manifests. They were checked for syntax only.
+- `make up && make test` of every Docker Compose example: `tomcat-builtin` (Tomcat 10.1.60),
+  `wildfly-elytron` (image build with `configure-rocoto.cli`, WildFly 40.0.1.Final),
+  `wildfly-oidc-keycloak` (Keycloak 26.0 realm import, password grant, JWT validation),
+  `prometheus-grafana` (target `up`, provisioned dashboard, every dashboard query returns data)
+  and `mtls-ocsp` (`alpine/openssl` responder, revocation, stapling).
+- `kubernetes`: the image build and all manifests in a single-node k3s (v1.34) cluster - rollout,
+  HTTPS probes, the README checks through `kubectl port-forward`, audit lines in the pod log; the
+  `ServiceMonitor` was accepted by the Prometheus Operator CRD (v0.76). No Prometheus Operator
+  scraped it.
+- The three clients and the custom adapter ran against `rocoto.war` + `demo-app.war` in an
+  embedded Tomcat 10.1.
+

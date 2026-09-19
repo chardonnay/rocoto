@@ -19,8 +19,9 @@ setups and covers the WildFly specifics that influence what Rocoto can see.
 > configuration in this chapter rest on that test.
 >
 > The CLI scripts under [`scripts/wildfly/`](scripts/wildfly/) - dedicated realm and domain, mTLS,
-> OIDC, RBAC, OCSP - are **recipes that have not been executed** by the build. They were written
-> against the WildFly 27+ management model; review and adapt them before use.
+> OIDC, RBAC, OCSP - are recipes written against the WildFly 27+ management model; review and adapt
+> them before use. `ci/wildfly/cli-scripts-test.sh` executes them against a real WildFly (40.0.1.Final
+> at the time of writing) with an `openssl ocsp` responder and Keycloak 26.
 
 ## Which mode?
 

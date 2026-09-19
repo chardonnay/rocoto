@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.rocoto</groupId>
+    <artifactId>rocoto-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>rocoto-undertow</artifactId>
+  <name>Rocoto :: Undertow</name>
+  <description>Rocoto for Undertow without the servlet layer: an HttpHandler for your own server, a standalone server and a Java agent.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.rocoto</groupId>
+      <artifactId>rocoto-embedded</artifactId>
+    </dependency>
+    <!-- the parent manages this API as "provided"; here nothing provides it -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.undertow</groupId>
+      <artifactId>undertow-core</artifactId>
+      <version>${undertow.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+        rocoto-undertow-<version>-all.jar: everything in one file, runnable (java -jar) and usable as
+        -javaagent. The HTTP server is relocated so that it cannot clash with the version the
+        monitored application uses itself.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>all</shadedClassifierName>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <relocations>
+                <relocation>
+                  <pattern>io.undertow</pattern>
+                  <shadedPattern>io.rocoto.shaded.io.undertow</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.xnio</pattern>
+                  <shadedPattern>io.rocoto.shaded.org.xnio</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.jboss.logging</pattern>
+                  <shadedPattern>io.rocoto.shaded.org.jboss.logging</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.jboss.threads</pattern>
+                  <shadedPattern>io.rocoto.shaded.org.jboss.threads</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.wildfly.common</pattern>
+                  <shadedPattern>io.rocoto.shaded.org.wildfly.common</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>io.smallrye.common</pattern>
+                  <shadedPattern>io.rocoto.shaded.io.smallrye.common</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.wildfly.client</pattern>
+                  <shadedPattern>io.rocoto.shaded.org.wildfly.client</shadedPattern>
+                </relocation>
+              </relocations>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Main-Class>io.rocoto.undertow.RocotoUndertowServer</Main-Class>
+                    <Premain-Class>io.rocoto.undertow.RocotoUndertowAgent</Premain-Class>
+                    <Agent-Class>io.rocoto.undertow.RocotoUndertowAgent</Agent-Class>
+                    <Implementation-Title>Rocoto</Implementation-Title>
+                    <Implementation-Version>${project.version}</Implementation-Version>
+                    <Multi-Release>true</Multi-Release>
+                  </manifestEntries>
+                </transformer>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/versions/*/module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

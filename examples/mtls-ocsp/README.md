@@ -109,13 +109,11 @@ docker compose start ocsp
 
 ## What was verified
 
-Docker was not available when this example was written, so the Compose file was not executed.
-Everything else was: `gen-certs.sh` (OpenSSL 3.6, `OCSP_URL=http://localhost:2560`), a local
-`openssl ocsp` responder, `rocoto.war` in an embedded Tomcat 10.1.34 configured like
-`conf/server.xml` (JSSE, optional client certificates, JDK 21 with
-`-Djdk.tls.server.enableStatusRequestExtension=true`) and `test.sh` against it. The outputs above
-come from that run. Not verified: the `alpine/openssl` image (its entrypoint is assumed to be
-`openssl`) and the property replacement `${demo.store.password}` in `server.xml`.
+`make up && make test` was executed with Docker (Docker 29, September 2026): `gen-certs.sh` (OpenSSL 3.6), the
+`alpine/openssl` responder, Tomcat 10.1.60 (`tomcat:10.1-jdk17`, JSSE, optional client
+certificates, `-Djdk.tls.server.enableStatusRequestExtension=true`, property replacement
+`${demo.store.password}` in `server.xml`) and `test.sh`: valid certificate 200, revoked
+certificate 401, stapled OCSP response present.
 
 ## Notes
 

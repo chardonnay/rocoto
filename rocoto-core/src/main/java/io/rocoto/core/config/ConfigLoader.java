@@ -25,6 +25,8 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  *   <li>{@code ${jboss.server.config.dir}/rocoto.yaml} (WildFly / JBoss EAP)</li>
  *   <li>{@code ${catalina.base}/conf/rocoto.yaml} (Tomcat)</li>
  *   <li>{@code ${com.sun.aas.instanceRoot}/config/rocoto.yaml} (Payara / GlassFish)</li>
+ *   <li>{@code ${jetty.base}/etc/rocoto.yaml} (Jetty)</li>
+ *   <li>{@code ${server.config.dir}/rocoto.yaml} (Open Liberty)</li>
  *   <li>{@code /rocoto.yaml} on the class path</li>
  * </ol>
  * Without any file the secure defaults apply.
@@ -87,6 +89,8 @@ public final class ConfigLoader {
         addIfSet(out, "jboss.server.config.dir", "rocoto.yaml");
         addIfSet(out, "catalina.base", "conf/rocoto.yaml");
         addIfSet(out, "com.sun.aas.instanceRoot", "config/rocoto.yaml");
+        addIfSet(out, "jetty.base", "etc/rocoto.yaml");
+        addIfSet(out, "server.config.dir", "rocoto.yaml");
         return out;
     }
 

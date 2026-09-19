@@ -88,6 +88,9 @@ stop-embedded-server
 <jboss-web xmlns="http://www.jboss.com/xml/ns/javaee">
   <context-root>/rocoto</context-root>
   <security-domain>rocoto</security-domain>
+  <!-- Must be kept (the overlay replaces the whole file): otherwise Elytron evaluates Basic
+       credentials before Rocoto's filter and rejects Rocoto's built-in users with 401. -->
+  <proactive-authentication>false</proactive-authentication>
 </jboss-web>
 ```
 
@@ -298,10 +301,9 @@ curl -s -u nora:demo-password-123 $B/api/v1/mbeans
 # {"pattern":"*:*","mbeans":[]}
 ```
 
-**Not executed:** Docker was not available when this page was written, so neither the image build
-nor the CLI script have run. The caller/role semantics of `chain` mode are asserted by Rocoto's
-integration test `ContainerAuthIT` (against a Tomcat realm). Review the script against your WildFly
-version; the README of the example lists what to check first.
+**Executed** (Docker 29, September 2026, WildFly 40.0.1.Final): the image build with the CLI script, `make up` and
+`make test` of the example. The guide's `setup-basic.cli` and `rocoto-overlay.cli` are executed by
+`ci/wildfly/cli-scripts-test.sh`.
 
 ## Notes
 

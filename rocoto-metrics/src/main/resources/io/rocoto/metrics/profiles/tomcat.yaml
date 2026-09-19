@@ -16,3 +16,7 @@ rules:
   - { mbean: "*:type=DataSource,*", attribute: numActive, name: tomcat_datasource_connections_active, help: "Active JDBC connections", labels: { datasource: "${name}", context: "${context}" } }
   - { mbean: "*:type=DataSource,*", attribute: numIdle, name: tomcat_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${name}", context: "${context}" } }
   - { mbean: "*:type=DataSource,*", attribute: maxTotal, name: tomcat_datasource_connections_max, help: "Maximum JDBC connections", labels: { datasource: "${name}", context: "${context}" } }
+  # Apache TomEE: container managed data sources (tomee.xml / resources.xml)
+  - { mbean: "openejb.management:ObjectType=datasources,*", attribute: NumActive, name: tomcat_datasource_connections_active, help: "Active JDBC connections", labels: { datasource: "${DataSource}", context: "" } }
+  - { mbean: "openejb.management:ObjectType=datasources,*", attribute: NumIdle, name: tomcat_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${DataSource}", context: "" } }
+  - { mbean: "openejb.management:ObjectType=datasources,*", attribute: MaxActive, name: tomcat_datasource_connections_max, help: "Maximum JDBC connections", labels: { datasource: "${DataSource}", context: "" } }

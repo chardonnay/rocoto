@@ -88,12 +88,11 @@ A rejected token is answered with `401`; the reason is only written to the audit
 
 ## Status of this example
 
-Docker was not available when this example was written, so the Compose setup and the realm import
-were **not executed**. The JSON file is syntactically valid and the scripts pass `bash -n`; the
-Keycloak specifics (hostname options of Keycloak 26, user profile fields required for the
-password grant, the audience mapper) are written from the Keycloak documentation. If the token
-request answers `Account is not fully set up`, open the user in the admin console and complete
-the required profile fields.
+`make up && make test` was executed with Docker (Docker 29, September 2026, Keycloak 26.0, WildFly 40.0.1.Final): the
+realm import, the password grant for `kate` and `ken`, the audience mapper and Rocoto's JWT
+validation work as described. If the token request of your own realm answers
+`Account is not fully set up`, open the user in the admin console and complete the required
+profile fields.
 
 ## What to look at next
 

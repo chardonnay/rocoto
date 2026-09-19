@@ -21,6 +21,7 @@ how to install it and how to operate it.
 | 11 | [Security hardening](11-security-hardening.md) | Checklist for production deployments |
 | 12 | [Troubleshooting](12-troubleshooting.md) | Status codes, log messages, common mistakes |
 | 13 | [TLS and OCSP](13-tls-and-ocsp.md) | Revocation checking, OCSP stapling, the TLS self probe |
+| 14 | [Keeping up with server releases](14-keeping-up-with-servers.md) | Pinned and floating server versions in CI, what to do when a new server release breaks something, adding a server |
 
 ## Reference and examples
 
@@ -46,6 +47,8 @@ how to install it and how to operate it.
   resources, policy, metrics, Jolokia compatibility and SSE.
 - The Elytron CLI scripts under [`scripts/wildfly/`](scripts/wildfly/) and the Tomcat snippets
   under [`scripts/tomcat/`](scripts/tomcat/) are recipes that are not executed by the build:
-  review and adapt before use. Payara support is experimental and untested.
+  review and adapt before use. The WildFly scripts are executed by `ci/wildfly/cli-scripts-test.sh`.
+  Payara / GlassFish support is experimental; `ci/payara/smoke-test.sh` covers Payara 6 and 7 and
+  GlassFish 7 and 8.
 
 Start with [01 - Architecture](01-architecture.md).

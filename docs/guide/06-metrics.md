@@ -126,7 +126,7 @@ and the `Tomcat` domain of an embedded server.
 | `tomcat_threads_current`, `tomcat_threads_busy`, `tomcat_threads_max`, `tomcat_connections_current` {`connector`} | `type=ThreadPool` |
 | `tomcat_requests_total`, `tomcat_request_errors_total`, `tomcat_request_processing_seconds_total`, `tomcat_sent_bytes_total`, `tomcat_received_bytes_total` {`connector`} | `type=GlobalRequestProcessor` |
 | `tomcat_sessions_active`, `tomcat_sessions_created_total`, `tomcat_sessions_expired_total`, `tomcat_sessions_rejected_total` {`host`, `context`} | `type=Manager` |
-| `tomcat_datasource_connections_active`, `tomcat_datasource_connections_idle`, `tomcat_datasource_connections_max` {`datasource`, `context`} | `type=DataSource` |
+| `tomcat_datasource_connections_active`, `tomcat_datasource_connections_idle`, `tomcat_datasource_connections_max` {`datasource`, `context`} | `type=DataSource`; on Apache TomEE also `openejb.management:ObjectType=datasources,*` (empty `context`) |
 
 ### `wildfly`
 
@@ -145,7 +145,7 @@ on the respective subsystem (see [04 - The JMX connection](04-jmx-connection.md)
 
 ### `payara` (experimental)
 
-Reads AMX monitoring MBeans; requires AMX and a monitoring level of at least `LOW` for
+Reads AMX monitoring MBeans; requires AMX and the monitoring level `HIGH` for
 `jdbc-connection-pool`, `thread-pool`, `web-container` and `http-service`.
 
 | Metric | Source |
@@ -154,6 +154,30 @@ Reads AMX monitoring MBeans; requires AMX and a monitoring level of at least `LO
 | `payara_threads_current`, `payara_threads_busy` {`pool`} | `amx:type=thread-pool-mon,*` |
 | `payara_sessions_active` {`app`} | `amx:type=session-mon,*` |
 | `payara_requests_total`, `payara_request_errors_total` {`server`} | `amx:type=request-mon,*` |
+
+### `jetty`
+
+Reads the MBeans of Jetty 12; requires Jetty's `jmx` module, the request metrics additionally the
+`statistics` module (`java -jar $JETTY_HOME/start.jar --add-modules=jmx,statistics`).
+
+| Metric | Source |
+|--------|--------|
+| `jetty_threads_current`, `jetty_threads_busy`, `jetty_threads_idle`, `jetty_threads_max`, `jetty_threads_queue_size` {`pool`} | `org.eclipse.jetty.util.thread:type=queuedthreadpool,*` |
+| `jetty_sessions_active`, `jetty_sessions_created_total` {`context`} | `org.eclipse.jetty.session:type=defaultsessioncache,*` |
+| `jetty_requests_total`, `jetty_requests_active`, `jetty_responses_4xx_total`, `jetty_responses_5xx_total` {`handler`} | `org.eclipse.jetty.server.handler:type=statisticshandler,*` |
+
+The `context` label is the last segment of Jetty's context key: `rocoto` on Jetty 12.0, `_rocoto` on 12.1.
+
+### `liberty`
+
+Reads the MBeans of the `monitor-1.0` feature of Open Liberty / WebSphere Liberty.
+
+| Metric | Source |
+|--------|--------|
+| `liberty_threads_current`, `liberty_threads_busy` {`pool`} | `WebSphere:type=ThreadPoolStats,*` |
+| `liberty_sessions_live`, `liberty_sessions_active`, `liberty_sessions_created_total`, `liberty_sessions_expired_total` {`app`} | `WebSphere:type=SessionStats,*` (registered with the first session of an application) |
+| `liberty_servlet_requests_total` {`servlet`} | `WebSphere:type=ServletStats,*` |
+| `liberty_connectionpool_connections_managed`, `liberty_connectionpool_connections_free`, `liberty_connectionpool_wait_time_milliseconds` {`pool`} | `WebSphere:type=ConnectionPoolStats,*` (not covered by the smoke test) |
 
 ## Custom rules and profiles
 
@@ -197,7 +221,7 @@ rules:
 | `type` | no | `gauge` (default) or `counter`; counter names must end with `_total` |
 | `help` | no | help text, default: the metric name |
 | `path` | no | key inside a `CompositeData` value, for example `used` |
-| `labels` | no | label name to template; `${prop}` is replaced by the ObjectName key property (quotes removed), an unknown property by the empty string |
+| `labels` | no | label name to template; `${prop}` is replaced by the ObjectName key property (quotes removed), an unknown property by the empty string; `${prop\|basename}` keeps only the part after the last `/` |
 | `scale` | no | multiplier, default `1.0` |
 
 Behaviour worth knowing:

@@ -25,10 +25,27 @@ public class RocotoBootstrap implements ServletContextListener {
             context.setAttribute(RocotoRuntime.CONTEXT_ATTRIBUTE, runtime);
             context.setAttribute(RocotoSecurity.CONTEXT_ATTRIBUTE, runtime.security());
             if (runtime.config().bool("stream.websocket", true)) {
-                WsEndpoint.register(context);
+                registerWebSocket(context);
             }
         } catch (RuntimeException e) {
             LOG.log(Level.SEVERE, "Rocoto failed to start and will reject all requests: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * WsEndpoint extends jakarta.websocket.Endpoint: on a server without the WebSocket API (e.g.
+     * Jetty without its ee10-websocket-jakarta module) merely loading it fails with a LinkageError.
+     * That must not take Rocoto down - streaming stays available over SSE.
+     */
+    private static void registerWebSocket(ServletContext context) {
+        if (context.getAttribute("jakarta.websocket.server.ServerContainer") == null) {
+            LOG.info("No WebSocket container available - streaming is offered over SSE only");
+            return;
+        }
+        try {
+            WsEndpoint.register(context);
+        } catch (LinkageError e) {
+            LOG.log(Level.WARNING, "WebSocket API not usable - streaming is offered over SSE only", e);
         }
     }
 

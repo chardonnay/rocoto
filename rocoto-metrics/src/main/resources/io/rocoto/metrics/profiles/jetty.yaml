@@ -1,0 +1,14 @@
+# Eclipse Jetty 12. Requires Jetty's jmx module (--add-modules=jmx); the jetty_requests_* and
+# jetty_responses_* metrics additionally need the statistics module (--add-modules=statistics).
+rules:
+  - { mbean: "org.eclipse.jetty.util.thread:type=queuedthreadpool,*", attribute: threads, name: jetty_threads_current, help: "Threads in the pool", labels: { pool: "${id}" } }
+  - { mbean: "org.eclipse.jetty.util.thread:type=queuedthreadpool,*", attribute: busyThreads, name: jetty_threads_busy, help: "Busy threads", labels: { pool: "${id}" } }
+  - { mbean: "org.eclipse.jetty.util.thread:type=queuedthreadpool,*", attribute: idleThreads, name: jetty_threads_idle, help: "Idle threads", labels: { pool: "${id}" } }
+  - { mbean: "org.eclipse.jetty.util.thread:type=queuedthreadpool,*", attribute: maxThreads, name: jetty_threads_max, help: "Maximum number of threads", labels: { pool: "${id}" } }
+  - { mbean: "org.eclipse.jetty.util.thread:type=queuedthreadpool,*", attribute: queueSize, name: jetty_threads_queue_size, help: "Jobs waiting for a thread", labels: { pool: "${id}" } }
+  - { mbean: "org.eclipse.jetty.session:type=defaultsessioncache,*", attribute: sessionsCurrent, name: jetty_sessions_active, help: "Active sessions", labels: { context: "${context|basename}" } }
+  - { mbean: "org.eclipse.jetty.session:type=defaultsessioncache,*", attribute: sessionsTotal, name: jetty_sessions_created_total, type: counter, help: "Sessions created", labels: { context: "${context|basename}" } }
+  - { mbean: "org.eclipse.jetty.server.handler:type=statisticshandler,*", attribute: requestTotal, name: jetty_requests_total, type: counter, help: "Requests handled", labels: { handler: "${id}" } }
+  - { mbean: "org.eclipse.jetty.server.handler:type=statisticshandler,*", attribute: requestsActive, name: jetty_requests_active, help: "Requests in progress", labels: { handler: "${id}" } }
+  - { mbean: "org.eclipse.jetty.server.handler:type=statisticshandler,*", attribute: responses5xx, name: jetty_responses_5xx_total, type: counter, help: "Responses with a 5xx status", labels: { handler: "${id}" } }
+  - { mbean: "org.eclipse.jetty.server.handler:type=statisticshandler,*", attribute: responses4xx, name: jetty_responses_4xx_total, type: counter, help: "Responses with a 4xx status", labels: { handler: "${id}" } }

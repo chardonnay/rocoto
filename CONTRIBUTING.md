@@ -33,3 +33,10 @@ WildFly (needs Docker) and checks links and Mermaid diagrams (`ci/docs/`).
 ## Reporting security issues
 
 See [SECURITY.md](SECURITY.md). Do not use public issues.
+
+## Application server releases
+
+`ci.yml` tests pinned server versions; `server-compat.yml` runs the same smoke tests weekly against
+the newest images and opens an issue when one breaks. How to reproduce and fix such a failure, and
+how to add a server, is described in
+[docs/guide/14-keeping-up-with-servers.md](docs/guide/14-keeping-up-with-servers.md).

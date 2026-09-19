@@ -13,12 +13,12 @@ import io.rocoto.core.config.ConfigLoader;
 
 /**
  * Loads metric mapping profiles. Bundled profiles: {@code jvm}, {@code tomcat}, {@code wildfly},
- * {@code payara}. {@code auto} resolves to the profile of the detected server adapter. Anything
+ * {@code payara}, {@code jetty}, {@code liberty}. {@code auto} resolves to the profile of the detected server adapter. Anything
  * else is treated as the path of a custom profile file.
  */
 public final class MetricProfiles {
 
-    private static final List<String> BUNDLED = List.of("jvm", "tomcat", "wildfly", "payara");
+    private static final List<String> BUNDLED = List.of("jvm", "tomcat", "wildfly", "payara", "jetty", "liberty");
 
     private MetricProfiles() {
     }

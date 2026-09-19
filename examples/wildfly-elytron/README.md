@@ -57,7 +57,7 @@ curl -s -u walt:demo-password-123 $B/api/v1/resources/datasources
 
 # The management model through the JMX facade of WildFly (domain jboss.as)
 curl -s -u walt:demo-password-123 -H 'Content-Type: application/json' \
-     -d '{"mbean":"jboss.as:subsystem=datasources,data-source=ExampleDS,statistics=pool","attribute":"inUseCount"}' \
+     -d '{"mbean":"jboss.as:subsystem=datasources,data-source=ExampleDS,statistics=pool","attribute":"InUseCount"}' \
      $B/api/v1/read
 
 # nora is a valid Elytron user without a Rocoto role

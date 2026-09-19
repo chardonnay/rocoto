@@ -18,7 +18,8 @@ import io.rocoto.core.config.ConfigException;
  * @param path      key inside a composite value (e.g. {@code used} of {@code HeapMemoryUsage}); if
  *                  {@code null} and the value is composite, every numeric key becomes a sample with a
  *                  {@code key} label
- * @param labels    label templates; {@code ${prop}} is replaced by the ObjectName key property
+ * @param labels    label templates; {@code ${prop}} is replaced by the ObjectName key property,
+ *                  {@code ${prop|basename}} by the part of it after the last {@code /}
  * @param scale     multiplier, e.g. {@code 0.001} to turn milliseconds into seconds
  */
 public record MetricRule(ObjectName mbean, String attribute, String path, String name, Type type, String help,

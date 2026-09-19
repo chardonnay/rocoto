@@ -1,13 +1,13 @@
 # WildFly / JBoss EAP via the JMX facade of the management model (jboss.as domain).
 # Pool and web statistics require statistics-enabled=true on the respective subsystems.
 rules:
-  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: inUseCount, name: wildfly_datasource_connections_active, help: "JDBC connections in use", labels: { datasource: "${data-source}" } }
-  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: idleCount, name: wildfly_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${data-source}" } }
-  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: availableCount, name: wildfly_datasource_connections_available, help: "Available JDBC connections", labels: { datasource: "${data-source}" } }
-  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: waitCount, name: wildfly_datasource_waiting_threads, help: "Threads waiting for a connection", labels: { datasource: "${data-source}" } }
-  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: timedOut, name: wildfly_datasource_timeouts_total, type: counter, help: "Connection acquisition timeouts", labels: { datasource: "${data-source}" } }
-  - { mbean: "jboss.as:subsystem=datasources,xa-data-source=*,statistics=pool", attribute: inUseCount, name: wildfly_datasource_connections_active, help: "JDBC connections in use", labels: { datasource: "${xa-data-source}" } }
-  - { mbean: "jboss.as:subsystem=datasources,xa-data-source=*,statistics=pool", attribute: idleCount, name: wildfly_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${xa-data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: InUseCount, name: wildfly_datasource_connections_active, help: "JDBC connections in use", labels: { datasource: "${data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: IdleCount, name: wildfly_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: AvailableCount, name: wildfly_datasource_connections_available, help: "Available JDBC connections", labels: { datasource: "${data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: WaitCount, name: wildfly_datasource_waiting_threads, help: "Threads waiting for a connection", labels: { datasource: "${data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,data-source=*,statistics=pool", attribute: TimedOut, name: wildfly_datasource_timeouts_total, type: counter, help: "Connection acquisition timeouts", labels: { datasource: "${data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,xa-data-source=*,statistics=pool", attribute: InUseCount, name: wildfly_datasource_connections_active, help: "JDBC connections in use", labels: { datasource: "${xa-data-source}" } }
+  - { mbean: "jboss.as:subsystem=datasources,xa-data-source=*,statistics=pool", attribute: IdleCount, name: wildfly_datasource_connections_idle, help: "Idle JDBC connections", labels: { datasource: "${xa-data-source}" } }
   - { mbean: "jboss.as:subsystem=undertow,server=*,http-listener=*", attribute: requestCount, name: wildfly_undertow_requests_total, type: counter, help: "Requests handled", labels: { server: "${server}", listener: "${http-listener}" } }
   - { mbean: "jboss.as:subsystem=undertow,server=*,http-listener=*", attribute: errorCount, name: wildfly_undertow_request_errors_total, type: counter, help: "Requests answered with a 5xx status", labels: { server: "${server}", listener: "${http-listener}" } }
   - { mbean: "jboss.as:subsystem=undertow,server=*,http-listener=*", attribute: bytesSent, name: wildfly_undertow_sent_bytes_total, type: counter, help: "Bytes sent", labels: { server: "${server}", listener: "${http-listener}" } }
@@ -20,7 +20,7 @@ rules:
   - { mbean: "jboss.as:deployment=*,subsystem=undertow", attribute: rejectedSessions, name: wildfly_sessions_rejected_total, type: counter, help: "Sessions rejected", labels: { deployment: "${deployment}" } }
   - { mbean: "jboss.as:subsystem=io,worker=*", attribute: busyTaskThreadCount, name: wildfly_io_worker_threads_busy, help: "Busy worker task threads", labels: { worker: "${worker}" } }
   - { mbean: "jboss.as:subsystem=io,worker=*", attribute: queueSize, name: wildfly_io_worker_queue_size, help: "Queued worker tasks", labels: { worker: "${worker}" } }
-  - { mbean: "jboss.as:subsystem=io,worker=*", attribute: maxWorkerPoolSize, name: wildfly_io_worker_threads_max, help: "Maximum worker task threads", labels: { worker: "${worker}" } }
+  - { mbean: "jboss.as:subsystem=io,worker=*", attribute: maxPoolSize, name: wildfly_io_worker_threads_max, help: "Maximum worker task threads", labels: { worker: "${worker}" } }
   - { mbean: "jboss.as:subsystem=transactions", attribute: numberOfInflightTransactions, name: wildfly_transactions_inflight, help: "Transactions in flight" }
   - { mbean: "jboss.as:subsystem=transactions", attribute: numberOfCommittedTransactions, name: wildfly_transactions_committed_total, type: counter, help: "Committed transactions" }
   - { mbean: "jboss.as:subsystem=transactions", attribute: numberOfAbortedTransactions, name: wildfly_transactions_aborted_total, type: counter, help: "Aborted transactions" }

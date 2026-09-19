@@ -1,0 +1,90 @@
+name: Server compatibility (newest releases)
+
+# Early warning for new application server releases: once a week the smoke tests run against the
+# FLOATING image tags ("latest" and friends), not against the versions pinned in ci.yml. A red run
+# means a new server release changed something Rocoto relies on (MBean names, attribute names,
+# security behaviour, image layout); an issue is opened or updated. Pull requests are never blocked
+# by this workflow - they use the pinned versions of ci.yml.
+on:
+  schedule:
+    - cron: '17 4 * * 1'        # Mondays 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - run: mvn -B -ntp -q install -DskipTests
+      - run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rocoto-compat
+          retention-days: 3
+          path: |
+            rocoto-war/target/rocoto.war
+            rocoto-tools/target/rocoto-tools.jar
+            examples/demo-app/target/demo-app.war
+
+  newest:
+    name: ${{ matrix.name }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: 'WildFly latest',          script: ci/wildfly/smoke-test.sh,       env: 'WILDFLY_IMAGE=quay.io/wildfly/wildfly:latest' }
+          - { name: 'WildFly latest, Elytron CLI scripts', script: ci/wildfly/cli-scripts-test.sh, env: 'WILDFLY_IMAGE=quay.io/wildfly/wildfly:latest-jdk17' }
+          - { name: 'Tomcat 10.1 latest',      script: 'ci/arch/arch-test.sh amd64',   env: 'TOMCAT_IMAGE=tomcat:10.1-jdk17' }
+          - { name: 'Tomcat 11 (Jakarta EE 11)', script: 'ci/arch/arch-test.sh amd64', env: 'TOMCAT_IMAGE=tomcat:11.0-jdk21' }
+          - { name: 'TomEE latest',            script: ci/tomee/smoke-test.sh,         env: 'TOMEE_IMAGE=tomee:latest' }
+          - { name: 'Jetty latest',            script: ci/jetty/smoke-test.sh,         env: 'JETTY_IMAGE=jetty:latest' }
+          - { name: 'Open Liberty latest',     script: ci/liberty/smoke-test.sh,       env: 'LIBERTY_IMAGE=icr.io/appcafe/open-liberty:full-java21-openj9-ubi-minimal' }
+          - { name: 'Payara latest',           script: ci/payara/smoke-test.sh,        env: 'PAYARA_IMAGE=payara/server-full:latest' }
+          - { name: 'GlassFish latest',        script: ci/payara/smoke-test.sh,        env: 'FLAVOR=glassfish GLASSFISH_IMAGE=ghcr.io/eclipse-ee4j/glassfish:latest' }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto-compat
+      - name: Run ${{ matrix.script }}
+        run: |
+          set -o pipefail
+          env ${{ matrix.env }} ${{ matrix.script }} 2>&1 | tee result.log
+      - name: Open or update an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: 'Server compatibility: ${{ matrix.name }} fails'
+        run: |
+          {
+            echo "The weekly run against the newest image failed: \`${{ matrix.env }} ${{ matrix.script }}\`"
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo '```'
+            grep -E 'FAIL|smoke test|test (passed|FAILED)|Exception|ERROR' result.log | tail -n 40
+            echo '```'
+            echo
+            echo "How to handle it: docs/guide/14-keeping-up-with-servers.md"
+          } > body.md
+          number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file body.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file body.md
+          fi

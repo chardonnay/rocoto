@@ -15,6 +15,10 @@ Two sources answer most questions:
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Every request: `503` `Rocoto is not initialised; see server log` | Invalid `rocoto.yaml`, missing file named by `rocoto.config`/`ROCOTO_CONFIG`, unwritable `audit.file`, unreadable trust store | Read the `SEVERE` message `Rocoto failed to start and will reject all requests: ...`, fix, redeploy. [Details](#503-rocoto-is-not-initialised) |
+| GlassFish 7: `503` HTML page (not JSON) for URLs with an ObjectName in the path | GlassFish 7 rejects every path containing `:` before Rocoto's filter (`invalid URLPatternSpec` in the server log) | Use `POST /api/v1/read`, `/write`, `/exec`, `/bulk`; fixed in GlassFish 8. [Details](02-installation.md#glassfish-differences) |
+| Jetty: resources and `jetty_*` metrics are empty, `"jmxModule": false` | Jetty registers MBeans only with its `jmx` module | `java -jar $JETTY_HOME/start.jar --add-modules=jmx` (and `statistics` for request metrics). [Details](02-installation.md#jetty-12) |
+| Open Liberty: resources and `liberty_*` metrics are empty, `"monitorFeature": false` | The statistics MBeans come from the `monitor-1.0` feature | Add `<feature>monitor-1.0</feature>` to `server.xml`. [Details](02-installation.md#open-liberty) |
+| `404` `No MBean registered as java.lang:type=Memory`, no `jvm_*` metrics; server log: `NullPointerException ... CgroupInfo.getMountPoint()` | JDK bug in container detection on cgroup v2 hosts (JDK 17.0.4 and older, e.g. in 2022 container images): the platform MXBeans are never registered | Use a current JDK patch release; as a stopgap start the JVM with `-XX:-UseContainerSupport` |
 | `401` although the password is right | User store empty or in another place; unknown user; token disabled or expired | [Details](#401-and-login-loops) |
 | `403` `Credentials are only accepted over TLS` | Request arrived on a connection the container reports as not secure | Use HTTPS; behind a proxy configure forwarding headers in the container. [Details](#403-credentials-are-only-accepted-over-tls) |
 | `403` `Access denied by policy` | Policy, token scope or built-in deny list | Look up the `DENIED` record in the audit log. [Details](#403-access-denied-by-policy) |
@@ -194,10 +198,12 @@ Also make sure the `jmx` subsystem exposes the management model (`expose-model=r
 **Payara / GlassFish**
 
 Runtime data is published as AMX MBeans (`amx:*`) once AMX is loaded and the monitoring level of
-the module is at least `LOW`:
+the module is `HIGH` (one level per module; `LOW` registers no `*-mon` MBeans on Payara 6 / 7).
+The statistics of a JDBC pool appear once the pool has been used:
 
 ```bash
-asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container --level=LOW
+asadmin set-amx-enabled --enabled=true --dynamic=true
+asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container --level=HIGH,HIGH,HIGH
 ```
 
 `GET /api/v1/server` shows `"amxLoaded": false` while the AMX MBeans are absent. Plain MBean access

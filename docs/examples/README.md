@@ -60,7 +60,6 @@ mvn install -DskipTests      # rocoto-war/target/rocoto.war, rocoto-tools/target
 - `auth.allowInsecureTransport: true` appears only in local Docker Compose demos and is always
   marked "LOCAL DEMO ONLY - never use in production". Without it Rocoto answers credentials sent
   over plain HTTP with `403 Credentials are only accepted over TLS`.
-- Pages state what was actually executed. The Docker Compose, WildFly CLI, Keycloak and Kubernetes
-  parts were written without Docker or a cluster at hand; the Rocoto requests and responses were
-  captured from `rocoto.war` running in an embedded Tomcat 10.1.
-- Reference: [configuration](../reference/configuration.md). Background: [user guide](../guide/README.md).
+- Pages state what was actually executed. The Docker Compose examples, the WildFly CLI scripts,
+  the Keycloak realm and the Kubernetes manifests were run with Docker (Docker 29, September 2026); most Rocoto
+  requests and responses shown were captured from `rocoto.war` in an embedded Tomcat 10.1.

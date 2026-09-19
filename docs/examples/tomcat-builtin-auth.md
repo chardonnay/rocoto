@@ -314,7 +314,7 @@ The `WARN` is intended: Rocoto reports the demo-only transport setting. After fi
 attempts are answered with `429` and a `Retry-After` header.
 
 This output was produced with the same WARs and configuration in an embedded Tomcat 10.1.34
-(there `jmxDomain` is `Tomcat`). The Docker Compose file itself was not executed.
+(there `jmxDomain` is `Tomcat`). The Docker Compose project passes `make test` with `tomcat:10.1-jdk17` (Tomcat 10.1.60).
 
 ## What to look at next
 

@@ -1,11 +1,12 @@
-# Payara / GlassFish AMX monitoring MBeans. Requires AMX and a monitoring level of at least LOW:
-#   asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container,http-service --level=LOW
+# Payara / GlassFish AMX monitoring MBeans. Requires AMX (asadmin set-amx-enabled) and the
+# monitoring level HIGH, one level per module (verified with Payara Server 6.2025.4):
+#   asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container,http-service --level=HIGH,HIGH,HIGH,HIGH
 rules:
   - { mbean: "amx:type=jdbc-connection-pool-mon,*", attribute: numconnused, path: current, name: payara_jdbc_connections_used, help: "JDBC connections in use", labels: { pool: "${name}" } }
   - { mbean: "amx:type=jdbc-connection-pool-mon,*", attribute: numconnfree, path: current, name: payara_jdbc_connections_free, help: "Free JDBC connections", labels: { pool: "${name}" } }
   - { mbean: "amx:type=jdbc-connection-pool-mon,*", attribute: waitqueuelength, path: count, name: payara_jdbc_wait_queue_length, help: "Requests waiting for a connection", labels: { pool: "${name}" } }
   - { mbean: "amx:type=thread-pool-mon,*", attribute: currentthreadcount, path: count, name: payara_threads_current, help: "Threads in the pool", labels: { pool: "${name}" } }
   - { mbean: "amx:type=thread-pool-mon,*", attribute: currentthreadsbusy, path: count, name: payara_threads_busy, help: "Busy threads", labels: { pool: "${name}" } }
-  - { mbean: "amx:type=session-mon,*", attribute: activesessionscurrent, path: current, name: payara_sessions_active, help: "Active sessions", labels: { app: "${pp}" } }
-  - { mbean: "amx:type=request-mon,*", attribute: requestcount, path: count, name: payara_requests_total, type: counter, help: "Requests processed", labels: { server: "${pp}" } }
-  - { mbean: "amx:type=request-mon,*", attribute: errorcount, path: count, name: payara_request_errors_total, type: counter, help: "Request errors", labels: { server: "${pp}" } }
+  - { mbean: "amx:type=session-mon,*", attribute: activesessionscurrent, path: current, name: payara_sessions_active, help: "Active sessions", labels: { app: "${name}" } }
+  - { mbean: "amx:type=request-mon,*", attribute: countrequests, path: count, name: payara_requests_total, type: counter, help: "Requests processed", labels: { server: "${name}" } }
+  - { mbean: "amx:type=request-mon,*", attribute: errorcount, path: count, name: payara_request_errors_total, type: counter, help: "Request errors", labels: { server: "${name}" } }

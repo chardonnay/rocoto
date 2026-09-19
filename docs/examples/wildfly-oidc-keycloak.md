@@ -310,8 +310,9 @@ malformed, expired or wrongly signed token gets `401`. The reason (`JWT rejected
 issuer`, `... unexpected audience`, `... token expired`, `... no matching key in JWKS`) is written
 to the audit log only.
 
-**Not executed:** Docker was not available when this page was written. The realm file is valid
-JSON and the scripts pass `bash -n`; Keycloak specifics follow the Keycloak 26 documentation.
+**Executed** (Docker 29, September 2026, Keycloak 26.0, WildFly 40.0.1.Final): `make up && make test` of the example,
+including the realm import. The Elytron alternative (`setup-oidc.cli`, bearer-only
+`elytron-oidc-client`) is executed against the same realm by `ci/wildfly/cli-scripts-test.sh`.
 
 ## Production checklist
 

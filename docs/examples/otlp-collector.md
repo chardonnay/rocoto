@@ -132,8 +132,9 @@ Content-Type: application/json
    "gauge":{"dataPoints":[{"attributes":[],"startTimeUnixNano":"1789762451674000000","timeUnixNano":"1789762461738000000","asDouble":1.57960624E8}]}}, ...
 ```
 
-The collector configuration and its log output above were **not executed** (no Docker at hand);
-they follow the OpenTelemetry Collector documentation.
+The local demo was executed with Docker (Docker 29, September 2026, `otelcol-contrib` 0.161.0): the collector accepts
+Rocoto's OTLP/HTTP JSON and re-exposes `jvm_*` and `tomcat_*` on port 8889 with
+`job="tomcat-demo"`. The `otlp:` keys belong directly below `metrics:`.
 
 ## Notes
 

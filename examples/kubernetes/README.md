@@ -17,9 +17,9 @@ Demo credentials (demo only, identical to the other examples): users `rita` (`ro
 `ada` (`rocoto-admin`) with the password `demo-password-123`, token
 `rct_prometheus_y7BJvUVB6oGbdKRNYXEgQ4YeKZ_MSEVIwUQuDmjmnLY` (`rocoto-reader`).
 
-None of this was applied to a cluster when it was written (no Docker, no `kubectl` at hand); the
-YAML files were only checked for syntax. Tomcat's JSSE connector with PEM `certificateFile` /
-`certificateKeyFile` was verified locally with an embedded Tomcat 10.1.
+The image and the manifests were applied to a single-node k3s cluster (v1.34, Docker 29, September 2026): rollout with
+the HTTPS probes, the checks below through `kubectl port-forward`, audit lines in the pod log.
+The `ServiceMonitor` was accepted by the Prometheus Operator CRD (v0.76); no operator scraped it.
 
 ## Credentials require TLS
 

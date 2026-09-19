@@ -1,0 +1,17 @@
+# =====================================================================================
+# LOCAL DEMO ONLY - never use in production.
+# auth.allowInsecureTransport makes Rocoto accept passwords and tokens over plain HTTP.
+# The credentials in rocoto-users.yaml are published in examples/README.md.
+# =====================================================================================
+auth:
+  mode: builtin                     # the only mode of the embedded runtime (there is no container)
+  allowInsecureTransport: true      # LOCAL DEMO ONLY - never use in production
+  builtin:
+    usersFile: rocoto-users.yaml
+
+policy:
+  rules:
+    - roles: [rocoto-operator, rocoto-admin]
+      allow: [exec]
+      mbean: "java.lang:type=Memory"
+      operations: [gc]
