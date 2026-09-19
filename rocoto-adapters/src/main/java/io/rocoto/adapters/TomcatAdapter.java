@@ -13,7 +13,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 /**
- * Apache Tomcat (and everything embedding it). All MBeans live in the platform MBeanServer under
+ * Apache Tomcat and everything embedding it, including Apache TomEE. All MBeans live in the platform MBeanServer under
  * the engine's domain – {@code Catalina} for a standalone server, {@code Tomcat} when embedded.
  */
 public class TomcatAdapter extends GenericAdapter {
@@ -50,7 +50,12 @@ public class TomcatAdapter extends GenericAdapter {
         Map<String, Object> info = new java.util.LinkedHashMap<>();
         info.put("product", "Apache Tomcat");
         for (ObjectName server : reader.search(domain + ":type=Server")) {
-            put(info, "version", reader.read(server, "serverInfo"));
+            Object serverInfo = reader.read(server, "serverInfo");
+            put(info, "version", serverInfo);
+            // TomEE reports "Apache Tomcat (TomEE)/<tomcat version> (<tomee version>)"
+            if (String.valueOf(serverInfo).contains("TomEE")) {
+                info.put("product", "Apache TomEE");
+            }
         }
         info.put("jmxDomain", domain);
         return info;
@@ -84,6 +89,15 @@ public class TomcatAdapter extends GenericAdapter {
                     put(r, "activeConnections", reader.read(n, "numActive"));
                     put(r, "idleConnections", reader.read(n, "numIdle"));
                     put(r, "maxConnections", reader.readFirst(n, "maxTotal", "maxActive"));
+                    rows.add(r);
+                }
+                // Apache TomEE: container managed resources of tomee.xml / resources.xml
+                for (ObjectName n : reader.search("openejb.management:ObjectType=datasources,*")) {
+                    Map<String, Object> r = row(n.getKeyProperty("DataSource"), n);
+                    put(r, "activeConnections", reader.read(n, "NumActive"));
+                    put(r, "idleConnections", reader.read(n, "NumIdle"));
+                    put(r, "maxConnections", reader.read(n, "MaxActive"));
+                    put(r, "waitingThreads", reader.read(n, "WaitCount"));
                     rows.add(r);
                 }
             }
