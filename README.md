@@ -98,7 +98,7 @@ There is no way around the pipeline.
 **CPU architectures:** `rocoto.war` and `rocoto-tools.jar` are plain Java bytecode without native
 libraries. The same file runs on arm64 (Apple Silicon, AWS Graviton, ...) and amd64 (Intel/AMD);
 `ci/arch/arch-test.sh` runs the one WAR on both, and CI builds and tests natively on Linux amd64,
-Linux arm64, Apple Silicon and Intel macOS.
+Linux arm64 and Apple Silicon.
 
 ## Quick start
 

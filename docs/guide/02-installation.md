@@ -54,7 +54,7 @@ Artifacts:
 file runs on arm64 (Apple Silicon, AWS Graviton, ...) and amd64 (Intel/AMD) - there are no
 per-architecture builds. `ci/arch/arch-test.sh` checks the artifacts for native code and runs the
 one WAR in `linux/arm64` and `linux/amd64` Tomcat containers; CI additionally builds and tests
-natively on Linux amd64, Linux arm64, Apple Silicon and Intel macOS. When you build container
+natively on Linux amd64, Linux arm64 and Apple Silicon. When you build container
 images (see [`examples/kubernetes`](../../examples/kubernetes/README.md)), the architecture comes
 from the base image: `docker buildx build --platform linux/amd64,linux/arm64 ...`.
 

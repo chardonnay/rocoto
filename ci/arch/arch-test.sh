@@ -52,6 +52,16 @@ for arch in "$@"; do
   check "container CPU" "$machine" "$(docker exec "$NAME" uname -m)"
   check "os.arch seen through Rocoto" "$machine" "$(curl -s -u rita:demo-password-123 \
     "http://localhost:$PORT/rocoto/api/v1/mbeans/java.lang%3Atype%3DOperatingSystem/attributes/Arch" | jq -r .value | sed 's/^amd64$/x86_64/')"
+  ARCH_BODY="$(curl -s -u rita:demo-password-123 "http://localhost:$PORT/rocoto/api/v1/mbeans/java.lang%3Atype%3DOperatingSystem/attributes/Arch")"
+  if ! echo "$ARCH_BODY" | jq -e '.value != null' >/dev/null 2>&1; then
+    # diagnostics: old JDKs in old images are known to fail on some MXBeans inside containers
+    echo "  ---- response: $ARCH_BODY"
+    echo "  ---- HeapMemoryUsage: $(curl -s -u rita:demo-password-123 -H 'Content-Type: application/json' \
+      -d '{"mbean":"java.lang:type=Memory","attribute":"HeapMemoryUsage"}' "http://localhost:$PORT/rocoto/api/v1/read" | cut -c1-400)"
+    echo "  ---- $(docker exec "$NAME" java -version 2>&1 | tr '\n' ' ')"
+    echo "  ---- host kernel $(uname -r), cgroup: $(docker exec "$NAME" sh -c 'stat -fc %T /sys/fs/cgroup' 2>&1)"
+    docker logs "$NAME" 2>&1 | grep -E "SEVERE|Exception|Caused by" | head -n 15 | sed 's/^/  ---- /'
+  fi
   if ROCOTO_URL="http://localhost:$PORT/rocoto" "$EX/test.sh" > /tmp/rocoto-arch-$arch.log 2>&1; then
     check "examples/tomcat-builtin/test.sh ($(grep -c '^ok' /tmp/rocoto-arch-$arch.log) checks)" passed passed
   else
