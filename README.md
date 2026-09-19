@@ -87,14 +87,25 @@ There is no way around the pipeline.
 | Server | Version | Container auth | Status |
 |---|---|---|---|
 | WildFly / JBoss EAP | 27+ / 8 (Jakarta EE 10) | Elytron | supported, CI smoke test on a real WildFly |
-| Apache Tomcat | 10.1+ | Realm | supported, integration tests on embedded Tomcat |
-| Payara / GlassFish | 6+ | Realm | experimental, untested (normalized view needs AMX monitoring) |
-| Open Liberty / WebSphere, WebLogic | – | – | planned |
+| Apache Tomcat | 10.1 (all of 10.1.0 - 10.1.60 tested), 11.0; 10.0 best effort | Realm | supported, integration tests on embedded Tomcat, CI runs real Tomcat 10.0.27, 10.1.0, 10.1.20 and 10.1.x latest |
+| Apache TomEE | 10 (Jakarta EE 10) | Realm | supported through the Tomcat adapter, CI smoke test on a real TomEE (including `tomee.xml` data sources) |
+| Eclipse Jetty | 12.0 / 12.1 (EE10) | LoginService | supported, CI smoke test on a real Jetty (needs Jetty's `jmx` module for the normalized view) |
+| Undertow (core), Netty | Undertow 2.3, Netty 4.1 | – (built-in only) | supported without a servlet container: handler for your own server, standalone jar, Java agent; SSE only, no WebSocket |
+| Payara / GlassFish | 6+ | Realm | experimental, smoke-tested on Payara 6 / 7 and GlassFish 7 / 8 (normalized view needs AMX monitoring; GlassFish 7: use the POST endpoints) |
+| Open Liberty / WebSphere Liberty | 26.0.0.9 (Jakarta EE 10 features) | User registry | supported, CI smoke test on a real Open Liberty (needs `monitor-1.0` for the normalized view) |
+| WebSphere traditional, WebLogic | – | – | planned |
+
+**CPU architectures:** `rocoto.war` and `rocoto-tools.jar` are plain Java bytecode without native
+libraries. The same file runs on arm64 (Apple Silicon, AWS Graviton, ...) and amd64 (Intel/AMD);
+`ci/arch/arch-test.sh` runs the one WAR on both, and CI builds and tests natively on Linux amd64,
+Linux arm64, Apple Silicon and Intel macOS.
 
 ## Quick start
 
 ```bash
-# 1. build (JDK 17+)
+# 1. download the compiled rocoto-<version>.war and rocoto-tools-<version>.jar from the GitHub
+#    releases page (one file for all CPU architectures) and save the WAR as rocoto.war -
+#    or build it yourself (JDK 17+):
 mvn verify
 
 # 2. deploy

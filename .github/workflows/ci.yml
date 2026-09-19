@@ -31,7 +31,74 @@ jobs:
           path: |
             rocoto-war/target/rocoto.war
             rocoto-tools/target/rocoto-tools.jar
+            rocoto-undertow/target/rocoto-undertow-*-all.jar
+            rocoto-netty/target/rocoto-netty-*-all.jar
           retention-days: 7
+
+  native-architectures:
+    # rocoto.war is architecture independent bytecode; build and run all tests natively on
+    # amd64 (Intel/AMD) and arm64 (Linux and Apple Silicon) anyway.
+    name: Build and tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04-arm, macos-latest, macos-13]   # arm64 Linux, Apple Silicon, Intel Mac
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: CPU architecture
+        run: uname -m
+      - name: Build, unit tests and integration tests (embedded Tomcat)
+        run: mvn -B -ntp verify
+
+  architectures:
+    name: One WAR on linux/arm64 and linux/amd64
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - uses: docker/setup-qemu-action@v3
+      - name: Demo application
+        run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
+      - name: Run
+        run: ci/arch/arch-test.sh
+
+  tomcat-versions:
+    name: Tomcat ${{ matrix.tag }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldest 10.1, a middle one, and 10.0 (Jakarta EE 9, end of life upstream - best effort)
+        tag: ['10.0.27-jdk17', '10.1.0-jdk17', '10.1.20-jdk17', '10.1-jdk25']
+    env:
+      TOMCAT_IMAGE: tomcat:${{ matrix.tag }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Demo application
+        run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
+      - name: Run
+        run: ci/arch/arch-test.sh amd64
 
   wildfly:
     name: Smoke test on a real WildFly (Elytron)
@@ -48,6 +115,138 @@ jobs:
           name: rocoto
       - name: Run
         run: ci/wildfly/smoke-test.sh
+
+  wildfly-cli-scripts:
+    name: Elytron CLI scripts on a real WildFly (realm, mTLS/OCSP, stapling, OIDC)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Run
+        run: ci/wildfly/cli-scripts-test.sh
+
+  payara:
+    name: Smoke test on ${{ matrix.flavor }} (${{ matrix.image }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { flavor: payara, image: 'payara/server-full:6.2025.11-jdk21' }
+          - { flavor: payara, image: 'payara/server-full:7.2026.9-jdk25' }
+          - { flavor: glassfish, image: 'ghcr.io/eclipse-ee4j/glassfish:7.1.0' }
+          - { flavor: glassfish, image: 'ghcr.io/eclipse-ee4j/glassfish:8.0.4' }
+    env:
+      FLAVOR: ${{ matrix.flavor }}
+      PAYARA_IMAGE: ${{ matrix.image }}
+      GLASSFISH_IMAGE: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Run
+        run: ci/payara/smoke-test.sh
+
+  jetty:
+    name: Smoke test on a real Jetty (${{ matrix.image }}, WebSocket ${{ matrix.websocket }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: 'jetty:12.0-jdk17', websocket: 'on', login: hash }
+          - { image: 'jetty:12.1-jdk25', websocket: 'on', login: hash }
+          - { image: 'jetty:12.1-jdk17', websocket: 'off', login: none }
+    env:
+      JETTY_IMAGE: ${{ matrix.image }}
+      WEBSOCKET: ${{ matrix.websocket }}
+      LOGIN_SERVICE: ${{ matrix.login }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Run
+        run: ci/jetty/smoke-test.sh
+
+  liberty:
+    name: Smoke test on a real Open Liberty (${{ matrix.image }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - 'open-liberty:full-java17-openj9'
+          - 'icr.io/appcafe/open-liberty:full-java21-openj9-ubi-minimal'
+    env:
+      LIBERTY_IMAGE: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Run
+        run: ci/liberty/smoke-test.sh
+
+  tomee:
+    name: Smoke test on a real Apache TomEE (${{ matrix.image }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['tomee:10.1-jre17-plume', 'tomee:10.1-jre21-Temurin-webprofile']
+    env:
+      TOMEE_IMAGE: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Run
+        run: ci/tomee/smoke-test.sh
+
+  embedded:
+    name: Undertow and Netty without a servlet container (mounted, standalone TLS, Java agent)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Build
+        run: mvn -B -ntp -q install -DskipTests
+      - name: Run
+        run: ci/embedded/smoke-test.sh
 
   docs:
     name: Documentation checks

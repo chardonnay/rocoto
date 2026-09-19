@@ -14,7 +14,9 @@ First hit wins:
 | 3 | `${jboss.server.config.dir}/rocoto.yaml` | WildFly / JBoss EAP (`standalone/configuration/`) |
 | 4 | `${catalina.base}/conf/rocoto.yaml` | Tomcat |
 | 5 | `${com.sun.aas.instanceRoot}/config/rocoto.yaml` | Payara / GlassFish |
-| 6 | `rocoto.yaml` on the class path | embedded in a custom WAR |
+| 6 | `${jetty.base}/etc/rocoto.yaml` | Jetty |
+| 7 | `${server.config.dir}/rocoto.yaml` | Open Liberty / WebSphere Liberty (next to `server.xml`) |
+| 8 | `rocoto.yaml` on the class path | embedded in a custom WAR |
 
 If 1 or 2 points to a file that does not exist, Rocoto refuses to start. An invalid configuration
 also aborts start-up; every request is then answered with `503` (Rocoto fails closed).
@@ -133,6 +135,30 @@ tls:
     warnDaysBeforeExpiry: 21
     intervalSeconds: 300
 ```
+
+## Embedded servers (`embedded`)
+
+Only read by the standalone servers and Java agents of `rocoto-undertow` and `rocoto-netty`
+(see [installation](../guide/02-installation.md#undertow-and-netty-embedded-runtime)); `rocoto.war` ignores it.
+
+```yaml
+embedded:
+  host: 127.0.0.1            # default: loopback only
+  port: 8778
+  contextPath: /rocoto
+  workerThreads: 8           # Rocoto blocks (JMX calls); these threads serve the requests
+  tls:                       # without it the listener is plain HTTP and credentials are refused
+    keystore: /etc/rocoto/server.p12
+    keystorePassword: ${env:ROCOTO_KEYSTORE_PASSWORD}
+    keystoreType: PKCS12
+    clientAuth: none         # none | want | need - want/need for auth.builtin.mtls
+    truststore: /etc/rocoto/client-ca.p12
+    truststorePassword: ${env:ROCOTO_TRUSTSTORE_PASSWORD}
+    truststoreType: PKCS12
+```
+
+The agent arguments `config=`, `host=` and `port=` (system properties `rocoto.config`,
+`rocoto.embedded.host`, `rocoto.embedded.port`) win over the file.
 
 ## Policy rules
 
