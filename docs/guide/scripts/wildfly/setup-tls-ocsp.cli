@@ -2,7 +2,7 @@
 # Rocoto on WildFly >= 27 / JBoss EAP 8: HTTPS listener prepared for OCSP stapling.
 #
 # Review and adapt before use; written against the WildFly 27+ management model.
-# This script has not been executed as part of Rocoto's automated tests.
+# Executed against WildFly 40.0.1.Final by ci/wildfly/cli-scripts-test.sh (placeholders replaced).
 #
 # IMPORTANT: stapling itself is switched on by JVM system properties, not by this script.
 # Add to bin/standalone.conf (standalone.conf.bat / .ps1 on Windows):

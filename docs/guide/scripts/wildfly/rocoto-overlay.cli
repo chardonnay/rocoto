@@ -3,7 +3,7 @@
 # uses the application-security-domain "rocoto" instead of "other".
 #
 # Review and adapt before use; written against the WildFly 27+ management model.
-# This script has not been executed as part of Rocoto's automated tests.
+# Executed against WildFly 40.0.1.Final by ci/wildfly/cli-scripts-test.sh (placeholders replaced).
 #
 # Prerequisite: /path/to/jboss-web.xml (see jboss-web-rocoto-domain.xml next to this script).
 # The overlay replaces the whole file: it must keep

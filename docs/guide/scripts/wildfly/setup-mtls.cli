@@ -3,7 +3,7 @@
 # with OCSP revocation checking of client certificates in the trust manager.
 #
 # Review and adapt before use; written against the WildFly 27+ management model.
-# This script has not been executed as part of Rocoto's automated tests.
+# Executed against WildFly 40.0.1.Final by ci/wildfly/cli-scripts-test.sh (placeholders replaced).
 #
 # Prerequisites in standalone/configuration:
 #   server.p12     server key + certificate chain

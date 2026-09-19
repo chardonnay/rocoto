@@ -3,7 +3,7 @@
 # elytron-oidc-client subsystem (e.g. against Keycloak).
 #
 # Review and adapt before use; written against the WildFly 27+ management model.
-# This script has not been executed as part of Rocoto's automated tests.
+# Executed against WildFly 40.0.1.Final by ci/wildfly/cli-scripts-test.sh (placeholders replaced).
 #
 # Set auth.mode: container (or chain) in rocoto.yaml. The roles rocoto-reader / rocoto-operator /
 # rocoto-admin must be realm roles of the token (realm_access.roles), or client roles of the
