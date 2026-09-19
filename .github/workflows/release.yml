@@ -1,0 +1,48 @@
+name: Release
+
+# Publishes the compiled artifacts for a tag "v<version>": rocoto.war, rocoto-tools.jar and the
+# standalone/agent jars for Undertow and Netty are attached to the GitHub release. Both are architecture independent Java bytecode - the same
+# files run on arm64 (Apple Silicon, Graviton, ...) and amd64 (Intel/AMD); ci/arch/arch-test.sh
+# verifies that before anything is published.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: The tag must match the project version
+        run: |
+          version="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME, but pom.xml says $version"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Build, unit tests and integration tests
+        run: mvn -B -ntp verify
+      - uses: docker/setup-qemu-action@v3
+      - name: Same WAR on linux/arm64 and linux/amd64
+        run: |
+          mvn -B -ntp -q -f examples/demo-app/pom.xml package
+          ci/arch/arch-test.sh
+      - name: Collect artifacts
+        run: |
+          mkdir dist
+          cp rocoto-war/target/rocoto.war "dist/rocoto-$VERSION.war"
+          cp rocoto-tools/target/rocoto-tools.jar "dist/rocoto-tools-$VERSION.jar"
+          cp "rocoto-undertow/target/rocoto-undertow-$VERSION-all.jar" "rocoto-netty/target/rocoto-netty-$VERSION-all.jar" dist/
+          cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Rocoto $VERSION" --generate-notes \
+            --notes "rocoto-$VERSION.war and rocoto-tools-$VERSION.jar are architecture independent (arm64 and amd64, any OS with a JDK 17+ application server). Verify downloads with SHA256SUMS."
