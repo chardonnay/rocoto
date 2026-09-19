@@ -14,8 +14,9 @@ import javax.management.openmbean.CompositeData;
 
 /**
  * Payara / GlassFish. Runtime data is published as AMX MBeans ({@code amx:*}) once AMX has been
- * started and the monitoring level of the respective module is at least {@code LOW}:
- * <pre>asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container --level=LOW</pre>
+ * started and the monitoring level of the respective module is {@code HIGH}
+ * (verified with Payara Server 6.2025.4; {@code LOW} registers no {@code *-mon} MBeans there):
+ * <pre>asadmin set-monitoring-level --module=jdbc-connection-pool,thread-pool,web-container --level=HIGH,HIGH,HIGH</pre>
  * Without that the normalized view is empty, while plain MBean access keeps working.
  */
 public class PayaraAdapter extends GenericAdapter {
@@ -81,7 +82,8 @@ public class PayaraAdapter extends GenericAdapter {
             }
             case SESSIONS -> {
                 for (ObjectName n : reader.search("amx:type=session-mon,*")) {
-                    Map<String, Object> r = row(n.getKeyProperty("pp"), n);
+                    // pp is the same for every monitoring MBean; the name is "<application>/<virtual server>"
+                    Map<String, Object> r = row(n.getKeyProperty("name"), n);
                     put(r, "activeSessions", stat(reader, n, "activesessionscurrent"));
                     put(r, "expiredSessions", stat(reader, n, "expiredsessionstotal"));
                     put(r, "rejectedSessions", stat(reader, n, "rejectedsessionstotal"));
