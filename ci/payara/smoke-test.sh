@@ -105,8 +105,13 @@ if [ "$DEPLOY" = "/deploy" ]; then
     sleep 2
   done
 fi
+# Autodeployment may deploy the WAR a second time right after the start (GlassFish 8 image): the
+# application answers, disappears (404) and comes back. Wait until it has answered 401 five times
+# in a row.
+stable=0
 for _ in $(seq 1 150); do
-  [ "$(status "$BASE/api/v1/server")" = "401" ] && break
+  if [ "$(status "$BASE/api/v1/server")" = "401" ]; then stable=$((stable + 1)); else stable=0; fi
+  [ "$stable" -ge 5 ] && break
   sleep 2
 done
 
