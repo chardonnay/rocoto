@@ -161,6 +161,13 @@ sleep 2
 curl -sk -o /dev/null -u "ada:$PASSWORD" "$BASE/api/v1/server"
 check "amxLoaded is true" true "$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server" | jq -r .server.amxLoaded)"
 res() { curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/resources/$1"; }
+# AMX loads its MBean tree asynchronously: give it up to a minute before asserting anything.
+for _ in $(seq 1 30); do
+  [ "$(res deployments | jq -r '[.items[].name] | index("rocoto") != null' 2>/dev/null)" = "true" ] \
+    && [ "$(res threadpools | jq -r '.items | length > 0' 2>/dev/null)" = "true" ] \
+    && [ "$(res sessions | jq -r '.items | length > 0' 2>/dev/null)" = "true" ] && break
+  sleep 2
+done
 check "deployments contain rocoto" true "$(res deployments | jq -r '[.items[].name] | index("rocoto") != null')"
 check "thread pool of http-listener-2" true \
   "$(res threadpools | jq -r '[.items[] | select(.name == "network/http-listener-2/thread-pool") | .maxThreads != null] | any')"
