@@ -119,12 +119,13 @@ subsystem** publishes a facade over it in the platform MBeanServer, in two domai
 - `jboss.as` - resolved values (expressions such as `${jboss.bind.address}` are evaluated)
 - `jboss.as.expr` - the raw expressions; writable where the model allows it
 
-A management address becomes an ObjectName, and attribute names are converted to camel case:
+A management address becomes an ObjectName, and attribute names are converted to camel case.
+The pool statistics are the exception: `statistics=pool` keeps the capitalized names of the
+connection pool (`InUseCount`, `IdleCount`, ...), verified against WildFly 40:
 
 | Management model | JMX facade |
 |------------------|------------|
 | `/subsystem=datasources/data-source=ExampleDS/statistics=pool` | `jboss.as:subsystem=datasources,data-source=ExampleDS,statistics=pool` |
-| attribute `in-use-count` | attribute `inUseCount` |
 | `/subsystem=undertow/server=default-server/http-listener=default` : `request-count` | `jboss.as:subsystem=undertow,server=default-server,http-listener=default` : `requestCount` |
 
 ```mermaid
@@ -256,7 +257,7 @@ Things to know on Tomcat:
 ## Payara (experimental)
 
 Payara publishes runtime data as AMX MBeans (`amx:*`) once AMX is loaded and the monitoring level
-of the module is at least `LOW` (see [02 - Installation](02-installation.md)). Without that the
+of the module is `HIGH` (see [02 - Installation](02-installation.md)). Without that the
 normalized view is empty, while JVM MBeans and all generic operations keep working. AMX statistics
 are composite values; the adapter takes the number from the key `count` or `current`.
 
@@ -323,20 +324,20 @@ attribute.
 | `jndiName` | `jndiName` | - | - |
 | `enabled` | `enabled` | - | - |
 | `context` | - | key property `context` | - |
-| `activeConnections` | `statistics=pool` : `inUseCount` | `numActive` | `numconnused` |
-| `idleConnections` | `idleCount` | `numIdle` | `numconnfree` |
+| `activeConnections` | `statistics=pool` : `InUseCount` | `numActive` | `numconnused` |
+| `idleConnections` | `IdleCount` | `numIdle` | `numconnfree` |
 | `maxConnections` | `maxPoolSize` (attribute of the data source itself) | `maxTotal` (or `maxActive`) | - |
-| `availableConnections` | `availableCount` | - | - |
-| `waitingThreads` | `waitCount` | - | `waitqueuelength` |
-| `maxUsedConnections` | `maxUsedCount` | - | - |
+| `availableConnections` | `AvailableCount` | - | - |
+| `waitingThreads` | `WaitCount` | - | `waitqueuelength` |
+| `maxUsedConnections` | `MaxUsedCount` | - | - |
 
 **`threadpools`**
 
 | Field | WildFly (`jboss.as:subsystem=io,worker=*`) | Tomcat (`<domain>:type=ThreadPool,*`) | Payara (`amx:type=thread-pool-mon,*`) |
 |-------|------|--------|--------|
-| `currentThreads` | `coreWorkerPoolSize` | `currentThreadCount` | `currentthreadcount` |
+| `currentThreads` | `corePoolSize` | `currentThreadCount` | `currentthreadcount` |
 | `busyThreads` | `busyTaskThreadCount` | `currentThreadsBusy` | `currentthreadsbusy` |
-| `maxThreads` | `maxWorkerPoolSize` (or `taskMaxThreads`) | `maxThreads` | `maxthreads` |
+| `maxThreads` | `maxPoolSize` (or `taskMaxThreads`) | `maxThreads` | `maxthreads` |
 | `queueSize` | `queueSize` | - | - |
 | `connections` | - | `connectionCount` | - |
 | `maxConnections` | - | `maxConnections` | - |

@@ -30,7 +30,7 @@ TOKEN="$(java -jar "$ROOT/rocoto-tools/target/rocoto-tools.jar" token create ci 
   --file "$WORK/rocoto-users.yaml" | grep -o 'rct_ci_[A-Za-z0-9_-]*' | head -1)"
 chmod 644 "$WORK/rocoto-users.yaml"
 
-docker build -q -t rocoto-wildfly-smoke "$WORK" >/dev/null
+docker build -q ${WILDFLY_IMAGE:+--build-arg "WILDFLY_IMAGE=$WILDFLY_IMAGE"} -t rocoto-wildfly-smoke "$WORK" >/dev/null
 docker run -d --name "$NAME" -p 18080:8080 rocoto-wildfly-smoke >/dev/null
 
 echo "Waiting for WildFly and the Rocoto deployment ..."
@@ -82,6 +82,9 @@ echo "Metrics and Jolokia compatibility"
 METRICS="$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/metrics")"
 check "JVM metrics" true "$(echo "$METRICS" | grep -q '^jvm_memory_heap_used_bytes ' && echo true || echo false)"
 check "WildFly metrics" true "$(echo "$METRICS" | grep -q '^wildfly_' && echo true || echo false)"
+check "data source pool metrics (statistics=pool uses capitalized attribute names)" true \
+  "$(echo "$METRICS" | grep -q '^wildfly_datasource_connections_active{datasource="ExampleDS"}' && echo true || echo false)"
+check "io worker metrics" true "$(echo "$METRICS" | grep -q '^wildfly_io_worker_threads_max' && echo true || echo false)"
 check "Jolokia read" 200 "$(curl -s -u "rita:$BUILTIN_PASSWORD" "$BASE/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
 check "Jolokia proxy mode does not exist" 403 "$(curl -s -u "rita:$BUILTIN_PASSWORD" -H 'Content-Type: application/json' \
   -d '{"type":"read","mbean":"java.lang:type=Memory","attribute":"Verbose","target":{"url":"service:jmx:rmi:///jndi/ldap://x/y"}}' "$BASE/jolokia" | jq -r .status)"

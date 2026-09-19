@@ -3,4 +3,7 @@
 <jboss-web xmlns="http://www.jboss.com/xml/ns/javaee">
   <context-root>/rocoto</context-root>
   <security-domain>rocoto</security-domain>
+  <!-- Must be kept (the overlay replaces the whole file): otherwise Elytron evaluates Basic
+       credentials before Rocoto's filter and rejects Rocoto's built-in users with 401. -->
+  <proactive-authentication>false</proactive-authentication>
 </jboss-web>

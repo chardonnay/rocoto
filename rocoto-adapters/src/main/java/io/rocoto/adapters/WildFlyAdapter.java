@@ -96,8 +96,8 @@ public class WildFlyAdapter extends GenericAdapter {
                 for (ObjectName n : reader.search("jboss.as:subsystem=io,worker=*")) {
                     Map<String, Object> r = row(n.getKeyProperty("worker"), n);
                     put(r, "busyThreads", reader.read(n, "busyTaskThreadCount"));
-                    put(r, "currentThreads", reader.read(n, "coreWorkerPoolSize"));
-                    put(r, "maxThreads", reader.readFirst(n, "maxWorkerPoolSize", "taskMaxThreads"));
+                    put(r, "currentThreads", reader.readFirst(n, "corePoolSize", "coreWorkerPoolSize"));
+                    put(r, "maxThreads", reader.readFirst(n, "maxPoolSize", "maxWorkerPoolSize", "taskMaxThreads"));
                     put(r, "queueSize", reader.read(n, "queueSize"));
                     rows.add(r);
                 }
