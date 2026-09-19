@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.rocoto</groupId>
+    <artifactId>rocoto-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>rocoto-embedded</artifactId>
+  <name>Rocoto :: Embedded runtime</name>
+  <description>Runs Rocoto's filter and servlets without a servlet container, on top of a small
+    server-neutral exchange abstraction (used by rocoto-undertow and rocoto-netty).</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.rocoto</groupId>
+      <artifactId>rocoto-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.rocoto</groupId>
+      <artifactId>rocoto-compat-jolokia</artifactId>
+    </dependency>
+    <!-- no container provides the API here -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+</project>
