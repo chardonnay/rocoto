@@ -5,6 +5,8 @@ All notable changes to Rocoto are recorded here. The format follows
 [Semantic Versioning](https://semver.org/). Until 1.0.0 a minor version may change configuration
 keys or API details; such changes are listed under "Changed".
 
+## [Unreleased]
+
 ## [0.1.0] - 2026-09-20
 
 First public release.
@@ -46,4 +48,5 @@ on linux/arm64, linux/amd64 and macOS (Apple Silicon).
 - The artifacts are not on Maven Central; build locally with `mvn install` to use the adapter SPI
   or the embedded handlers as a dependency.
 
+[Unreleased]: https://github.com/chardonnay/rocoto/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/chardonnay/rocoto/releases/tag/v0.1.0
