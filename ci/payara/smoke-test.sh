@@ -157,13 +157,16 @@ fi
 # Payara: pool statistics appear once the pool is initialized. (GlassFish's DerbyPool has no
 # database behind it in the image; its monitoring MBean exists anyway.)
 asadmin ping-connection-pool "$POOL" >/dev/null 2>&1 || true
-# While AMX boots, the server may reset a connection (curl exit 56): poll instead of failing.
+# While AMX boots, the server may reset connections (curl exit 56, empty body): poll, keep the
+# answer that was seen, and let every later request of this section retry.
+AMX_LOADED=""
 for _ in $(seq 1 30); do
-  [ "$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server" 2>/dev/null | jq -r .server.amxLoaded 2>/dev/null)" = "true" ] && break
+  AMX_LOADED="$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server" 2>/dev/null | jq -r .server.amxLoaded 2>/dev/null || true)"
+  [ "$AMX_LOADED" = "true" ] && break
   sleep 2
 done
-check "amxLoaded is true" true "$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server" | jq -r .server.amxLoaded)"
-res() { curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/resources/$1"; }
+check "amxLoaded is true" true "$AMX_LOADED"
+res() { curl -sk --retry 5 --retry-delay 2 --retry-all-errors -u "ada:$PASSWORD" "$BASE/api/v1/resources/$1"; }
 # AMX loads its MBean tree asynchronously: give it up to a minute before asserting anything.
 for _ in $(seq 1 30); do
   [ "$(res deployments | jq -r '[.items[].name] | index("rocoto") != null' 2>/dev/null)" = "true" ] \
@@ -176,7 +179,7 @@ check "thread pool of http-listener-2" true \
   "$(res threadpools | jq -r '[.items[] | select(.name == "network/http-listener-2/thread-pool") | .maxThreads != null] | any')"
 check "sessions are named after the application" true "$(res sessions | jq -r '[.items[].name] | index("rocoto/server") != null')"
 check "data source $POOL" true "$(res datasources | jq -r --arg p "$POOL" '[.items[] | select(.name | endswith($p)) | .activeConnections != null] | any')"
-METRICS="$(curl -sk -u "ada:$PASSWORD" "$BASE/metrics")"
+METRICS="$(curl -sk --retry 5 --retry-delay 2 --retry-all-errors -u "ada:$PASSWORD" "$BASE/metrics")"
 for metric in jvm_memory_heap_used_bytes payara_threads_busy payara_jdbc_connections_used payara_sessions_active \
               payara_requests_total payara_request_errors_total; do
   check "metric $metric" true "$(echo "$METRICS" | grep -c "^$metric" >/dev/null && echo true || echo false)"
