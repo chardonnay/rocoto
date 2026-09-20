@@ -38,13 +38,14 @@ jobs:
   native-architectures:
     # rocoto.war is architecture independent bytecode; build and run all tests natively on
     # amd64 (job "build") and arm64 (Linux and Apple Silicon) anyway. GitHub no longer offers Intel
-    # macOS runners (macos-13 stayed queued forever).
+    # macOS runners (macos-13 stayed queued forever). windows-latest proves that nothing depends on
+    # POSIX file permissions, "/" as separator or LF line ends.
     name: Build and tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04-arm, macos-latest]   # arm64 Linux, Apple Silicon (amd64 Linux: job "build")
+        os: [ubuntu-24.04-arm, macos-latest, windows-latest]   # arm64 Linux, Apple Silicon, Windows (amd64 Linux: job "build")
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -53,6 +54,7 @@ jobs:
           java-version: '17'
           cache: maven
       - name: CPU architecture
+        shell: bash
         run: uname -m
       - name: Build, unit tests and integration tests (embedded Tomcat)
         run: mvn -B -ntp verify
