@@ -406,6 +406,43 @@ with the official images:
 `glassfish-web.xml` maps realm groups named `rocoto-reader`, `rocoto-operator` and `rocoto-admin`
 onto the roles of the same name (relevant for `auth.mode: container` or `chain`).
 
+## Windows
+
+Rocoto is plain Java: `rocoto.war`, `rocoto-tools.jar` and the embedded `-all.jar` files are the
+same on Windows, Linux and macOS, and nothing in them calls a shell. The CI builds Rocoto and runs
+all unit and integration tests (embedded Tomcat, Undertow, Netty) on `windows-latest`. The smoke
+tests against real servers run in Linux containers only - the servers themselves have not been
+smoke-tested on Windows.
+
+What differs is how you type the commands of this guide:
+
+| This guide (Unix) | Windows (PowerShell) |
+|---|---|
+| `$CATALINA_BASE/conf`, `$JBOSS_HOME/...` | `$env:CATALINA_BASE\conf`, `$env:JBOSS_HOME\...` |
+| `cp rocoto.war $CATALINA_BASE/webapps/` | `Copy-Item rocoto.war $env:CATALINA_BASE\webapps\` |
+| `jboss-cli.sh`, `standalone.sh`, `asadmin` | `jboss-cli.bat` / `jboss-cli.ps1`, `standalone.bat`, `asadmin.bat` |
+| `bin/setenv.sh` | `bin\setenv.bat` ([`scripts/tomcat/setenv.bat`](scripts/tomcat/setenv.bat)); for a Windows service: `tomcat10w.exe`, tab "Java" |
+| `curl ...` | `curl.exe ...` (part of Windows 10/11; plain `curl` is an alias of `Invoke-WebRequest` in Windows PowerShell 5) |
+| `java -jar rocoto-tools.jar ...` | identical |
+| `export ROCOTO_CONFIG=/etc/rocoto/rocoto.yaml` | `$env:ROCOTO_CONFIG = 'C:\rocoto\rocoto.yaml'`, or `-Drocoto.config=C:\rocoto\rocoto.yaml` in the server's Java options |
+
+Things to know:
+
+- **Paths in `rocoto.yaml`:** write them with forward slashes (`C:/rocoto/rocoto-users.yaml`) or
+  in single quotes; in double quoted YAML strings `\` is an escape character.
+- **File permissions:** NTFS has no POSIX permissions, so Rocoto cannot warn about a user store
+  that other accounts can read, and `rocoto-tools` cannot restrict the file it writes. Protect
+  `rocoto-users.yaml` and the keystores with an ACL yourself, for example
+  `icacls rocoto-users.yaml /inheritance:r /grant:r "<server account>:R" "BUILTIN\Administrators:F"`
+  (`<server account>` is the account your server runs as, for a Tomcat service by default
+  `NT AUTHORITY\LocalService`).
+- **Passwords:** let `rocoto-tools` prompt for the password. Piping it with `--password-stdin`
+  works in PowerShell 7; Windows PowerShell 5 sends non-ASCII characters in its own encoding.
+- **The `*.sh` files in this repository** (`ci/`, `examples/*/test.sh`, `gen-certs.sh`, ...) are
+  test and demo helpers, not part of Rocoto. The Docker based examples run unchanged with Docker
+  Desktop; start their scripts from WSL 2 or Git Bash. `.gitattributes` keeps their LF line ends
+  in a Windows checkout.
+
 ## Creating the first user and token
 
 Out of the box the user store is empty, so nobody can log in. Credentials are managed with

@@ -7,6 +7,11 @@ keys or API details; such changes are listed under "Changed".
 
 ## [Unreleased]
 
+### Added
+
+- Windows: the CI builds and tests on `windows-latest`; installation notes for Windows and
+  `setenv.bat` for Tomcat.
+
 ## [0.1.0] - 2026-09-20
 
 First public release.
