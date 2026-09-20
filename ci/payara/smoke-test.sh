@@ -157,8 +157,11 @@ fi
 # Payara: pool statistics appear once the pool is initialized. (GlassFish's DerbyPool has no
 # database behind it in the image; its monitoring MBean exists anyway.)
 asadmin ping-connection-pool "$POOL" >/dev/null 2>&1 || true
-sleep 2
-curl -sk -o /dev/null -u "ada:$PASSWORD" "$BASE/api/v1/server"
+# While AMX boots, the server may reset a connection (curl exit 56): poll instead of failing.
+for _ in $(seq 1 30); do
+  [ "$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server" 2>/dev/null | jq -r .server.amxLoaded 2>/dev/null)" = "true" ] && break
+  sleep 2
+done
 check "amxLoaded is true" true "$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server" | jq -r .server.amxLoaded)"
 res() { curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/resources/$1"; }
 # AMX loads its MBean tree asynchronously: give it up to a minute before asserting anything.
