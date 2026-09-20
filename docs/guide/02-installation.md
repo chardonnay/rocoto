@@ -440,8 +440,56 @@ Things to know:
   works in PowerShell 7; Windows PowerShell 5 sends non-ASCII characters in its own encoding.
 - **The `*.sh` files in this repository** (`ci/`, `examples/*/test.sh`, `gen-certs.sh`, ...) are
   test and demo helpers, not part of Rocoto. The Docker based examples run unchanged with Docker
-  Desktop; start their scripts from WSL 2 or Git Bash. `.gitattributes` keeps their LF line ends
+  Desktop: `docker compose up -d` instead of `make up`, then the `*.ps1` script where there is one
+  (see below), or the `*.sh` scripts from WSL 2 or Git Bash. `.gitattributes` keeps their LF line ends
   in a Windows checkout.
+
+### First calls with PowerShell
+
+The calls of "[First calls](#first-calls)" without `curl`. These lines work in Windows
+PowerShell 5.1 and in PowerShell 7:
+
+```powershell
+# HTTP Basic: PowerShell asks for the password, it never appears in the command line
+$cred = Get-Credential ada
+$pair = "$($cred.UserName):$($cred.GetNetworkCredential().Password)"
+$basic = @{ Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pair)) }
+Invoke-RestMethod -Uri https://server:8443/rocoto/api/v1/server -Headers $basic
+
+# API token; the ObjectName is one URL-encoded path segment
+$bearer = @{ Authorization = "Bearer $token" }
+$mbean = [Uri]::EscapeDataString('java.lang:type=Memory')
+(Invoke-RestMethod -Uri "https://server:8443/rocoto/api/v1/mbeans/$mbean/attributes/HeapMemoryUsage" -Headers $bearer).value.used
+
+# RPC style: the Content-Type is mandatory
+$body = @{ mbean = 'java.lang:type=Memory'; attribute = 'HeapMemoryUsage' } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri https://server:8443/rocoto/api/v1/read -Headers $bearer `
+  -ContentType 'application/json' -Body $body
+```
+
+`Invoke-RestMethod` parses the JSON answer into an object (`.value.used`). PowerShell 7 can do the
+header itself: `Invoke-RestMethod -Uri ... -Authentication Basic -Credential $cred`. It refuses to
+send credentials over plain `http://` unless you add `-AllowUnencryptedAuthentication` - as
+Rocoto does on the server side, see below.
+
+An HTTP error (401, 403, 404, ...) is thrown as an exception; Rocoto's JSON error is in
+`$_.ErrorDetails.Message`:
+
+```powershell
+try {
+    Invoke-RestMethod -Uri https://server:8443/rocoto/api/v1/mbeans/nope%3Atype%3DNone -Headers $bearer
+} catch {
+    $_.ErrorDetails.Message | ConvertFrom-Json     # status: 404, error: No MBean registered as nope:type=None
+}
+```
+
+Complete scripts: [`examples/clients/powershell`](../../examples/clients/powershell/rocoto-client.ps1)
+(read, bulk, exec, Server-Sent Events and WebSocket with .NET's `HttpClient` and
+`ClientWebSocket`), [`examples/tomcat-builtin/test.ps1`](../../examples/tomcat-builtin/test.ps1)
+and `get-token.ps1` / `call-rocoto.ps1` in
+[`examples/wildfly-oidc-keycloak`](../../examples/wildfly-oidc-keycloak/README.md). CI runs the
+first two with PowerShell 7. If Windows refuses to run a downloaded script, allow it for the
+session: `Set-ExecutionPolicy -Scope Process RemoteSigned`.
 
 ## Creating the first user and token
 

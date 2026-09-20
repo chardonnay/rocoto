@@ -11,6 +11,9 @@ keys or API details; such changes are listed under "Changed".
 
 - Windows: the CI builds and tests on `windows-latest`; installation notes for Windows and
   `setenv.bat` for Tomcat.
+- PowerShell examples (Windows PowerShell 5.1 and PowerShell 7): client with read, bulk, exec,
+  SSE and WebSocket, `test.ps1` for the Tomcat example, `get-token.ps1` / `call-rocoto.ps1` for
+  the Keycloak example; first calls with `Invoke-RestMethod` in the installation guide.
 
 ## [0.1.0] - 2026-09-20
 

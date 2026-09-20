@@ -240,6 +240,43 @@ jobs:
       - name: Run
         run: ci/tomee/smoke-test.sh
 
+  powershell-examples:
+    # The PowerShell examples for Windows users, run with PowerShell 7 (preinstalled on the runner)
+    # against the tomcat-builtin example. Windows runners cannot start Linux containers.
+    name: PowerShell examples (test.ps1, rocoto-client.ps1)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: rocoto
+      - name: Start examples/tomcat-builtin
+        run: |
+          mvn -B -ntp -q -f examples/demo-app/pom.xml package
+          make -C examples/tomcat-builtin up
+      - name: test.ps1
+        shell: pwsh
+        run: ./examples/tomcat-builtin/test.ps1
+      - name: rocoto-client.ps1 (read, bulk, exec, SSE, WebSocket)
+        shell: pwsh
+        run: |
+          $bash = Get-Content -Raw examples/tomcat-builtin/test.sh
+          $env:ROCOTO_USER = 'otto'
+          $env:ROCOTO_PASSWORD = [regex]::Match($bash, '(?m)^PASSWORD="([^"]+)"').Groups[1].Value
+          $out = ./examples/clients/powershell/rocoto-client.ps1
+          $out
+          if (-not ($out -match '"operation":"drainQueue"')) { throw 'exec did not answer' }
+          if (@($out -match '^value ').Count -ne 3) { throw 'expected three SSE values' }
+          if (@($out -match '"id":"threads"').Count -ne 3) { throw 'expected three WebSocket values' }
+      - name: Server log on failure
+        if: failure()
+        run: make -C examples/tomcat-builtin logs
+
   embedded:
     name: Undertow and Netty without a servlet container (mounted, standalone TLS, Java agent)
     runs-on: ubuntu-latest
