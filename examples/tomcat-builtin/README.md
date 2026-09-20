@@ -59,7 +59,7 @@ curl -i $B/api/v1/server
 # WWW-Authenticate: Bearer realm="Rocoto"
 
 curl -s -u rita:demo-password-123 $B/api/v1/server
-# {"rocoto":{"version":"0.1.0-SNAPSHOT","authMode":"builtin"},
+# {"rocoto":{"version":"0.1.0","authMode":"builtin"},
 #  "server":{"adapter":"tomcat","product":"Apache Tomcat","version":"Apache Tomcat/10.1.x","jmxDomain":"Catalina"},
 #  "caller":{"name":"rita","roles":["rocoto-reader"],"authenticatedBy":"basic"}}
 

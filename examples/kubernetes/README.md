@@ -103,7 +103,7 @@ curl -s --cacert tls.crt https://localhost:8443/rocoto/api/v1/health/live
 # {"status":"UP"}
 
 curl -s --cacert tls.crt -u ada:demo-password-123 https://localhost:8443/rocoto/api/v1/server
-# {"rocoto":{"version":"0.1.0-SNAPSHOT","authMode":"builtin"},"server":{"adapter":"tomcat",...},
+# {"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{"adapter":"tomcat",...},
 #  "caller":{"name":"ada","roles":["rocoto-admin"],"authenticatedBy":"basic"}}
 
 curl -s --cacert tls.crt -H "Authorization: Bearer rct_prometheus_y7BJvUVB6oGbdKRNYXEgQ4YeKZ_MSEVIwUQuDmjmnLY" \

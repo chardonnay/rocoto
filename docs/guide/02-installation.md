@@ -461,7 +461,7 @@ curl -s -u ada https://server:8443/rocoto/api/v1/server
 
 ```json
 {
-  "rocoto": { "version": "0.1.0-SNAPSHOT", "authMode": "builtin" },
+  "rocoto": { "version": "0.1.0", "authMode": "builtin" },
   "server": { "adapter": "tomcat", "product": "Apache Tomcat", "version": "Apache Tomcat/10.1.x", "jmxDomain": "Catalina" },
   "caller": { "name": "ada", "roles": ["rocoto-admin"], "authenticatedBy": "basic" }
 }
