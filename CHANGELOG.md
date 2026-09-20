@@ -15,6 +15,11 @@ keys or API details; such changes are listed under "Changed".
   SSE and WebSocket, `test.ps1` for the Tomcat example, `get-token.ps1` / `call-rocoto.ps1` for
   the Keycloak example; first calls with `Invoke-RestMethod` in the installation guide.
 
+### Fixed
+
+- The error for an unknown attribute of a JDK MBean no longer repeats its prefix
+  ("No such attribute: No such attribute: X").
+
 ## [0.1.0] - 2026-09-20
 
 First public release.

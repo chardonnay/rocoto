@@ -60,12 +60,12 @@ public final class MBeanServerAccess implements MBeanAccess {
 
     @Override
     public Object getAttribute(ObjectName name, String attribute) {
-        return call(name, server -> server.getAttribute(name, attribute));
+        return call(name, attribute, server -> server.getAttribute(name, attribute));
     }
 
     @Override
     public void setAttribute(ObjectName name, String attribute, Object value) {
-        call(name, server -> {
+        call(name, attribute, server -> {
             server.setAttribute(name, new Attribute(attribute, value));
             return null;
         });
@@ -110,6 +110,16 @@ public final class MBeanServerAccess implements MBeanAccess {
     }
 
     private <T> T call(ObjectName name, JmxCall<T> call) {
+        return call(name, null, call);
+    }
+
+    /**
+     * @param attribute the attribute the call is about, or null. The text of an
+     *                  AttributeNotFoundException is up to the MBean (the JDK's own MBeans say
+     *                  "No such attribute: X", others only "X" or nothing), so the error message is
+     *                  built from the requested name, not from that text.
+     */
+    private <T> T call(ObjectName name, String attribute, JmxCall<T> call) {
         MBeanServerConnection server = find(name);
         if (server == null) {
             throw new MBeanAccessException(Kind.MBEAN_NOT_FOUND, "No MBean registered as " + name);
@@ -119,7 +129,7 @@ public final class MBeanServerAccess implements MBeanAccess {
         } catch (InstanceNotFoundException e) {
             throw new MBeanAccessException(Kind.MBEAN_NOT_FOUND, "No MBean registered as " + name, e);
         } catch (AttributeNotFoundException e) {
-            throw new MBeanAccessException(Kind.ATTRIBUTE_NOT_FOUND, "No such attribute: " + e.getMessage(), e);
+            throw new MBeanAccessException(Kind.ATTRIBUTE_NOT_FOUND, "No such attribute: " + attribute, e);
         } catch (InvalidAttributeValueException e) {
             throw new MBeanAccessException(Kind.INVALID_VALUE, "Invalid attribute value: " + e.getMessage(), e);
         } catch (SecurityException e) {
