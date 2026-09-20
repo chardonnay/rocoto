@@ -1,6 +1,6 @@
-# Client examples: Java, Python, Node.js
+# Client examples: Java, Python, Node.js, PowerShell
 
-Three small programs that do the same things against a running Rocoto: identify the caller, read
+Four small programs that do the same things against a running Rocoto: identify the caller, read
 (resource and RPC style), bulk, exec, error handling and streaming.
 
 | Directory | Stack | Streaming |
@@ -8,6 +8,7 @@ Three small programs that do the same things against a running Rocoto: identify 
 | [`java/`](java) | Java 17, `java.net.http.HttpClient`, no dependencies | SSE with `BodyHandlers.ofLines()`, WebSocket with `java.net.http.WebSocket` |
 | [`python/`](python) | Python 3.9+, `requests` | SSE with `stream=True` |
 | [`js/`](js) | Node.js 18+, built-in `fetch` | SSE over fetch streaming, WebSocket with the `ws` package |
+| [`powershell/`](powershell) | Windows PowerShell 5.1 or PowerShell 7, .NET `HttpClient`, no modules | SSE with a `StreamReader`, WebSocket with `ClientWebSocket` |
 
 All of them expect the demo MBean `com.example.demo:type=Orders`, so the natural server is
 [tomcat-builtin](../tomcat-builtin/README.md) (`make up` there first).
@@ -40,6 +41,13 @@ python rocoto_client.py
 
 # Node.js
 cd js && npm install && node rocoto-client.mjs
+```
+
+```powershell
+# PowerShell (Windows, or pwsh on Linux/macOS)
+$env:ROCOTO_URL = 'http://localhost:8080/rocoto'
+$env:ROCOTO_USER = 'otto'; $env:ROCOTO_PASSWORD = 'demo-password-123'     # demo-only credentials of tomcat-builtin
+.\powershell\rocoto-client.ps1
 ```
 
 Expected output (Java, abridged):

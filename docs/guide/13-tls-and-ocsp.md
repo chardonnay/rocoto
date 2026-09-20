@@ -130,7 +130,7 @@ credential store instead of `clear-text` passwords.
 
 ### Tomcat
 
-Files: [`scripts/tomcat/setenv.sh`](scripts/tomcat/setenv.sh),
+Files: [`scripts/tomcat/setenv.sh`](scripts/tomcat/setenv.sh) (Windows: [`setenv.bat`](scripts/tomcat/setenv.bat)),
 [`scripts/tomcat/server-ocsp-snippet.xml`](scripts/tomcat/server-ocsp-snippet.xml).
 
 ```bash

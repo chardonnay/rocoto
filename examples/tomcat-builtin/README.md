@@ -13,6 +13,7 @@ API token come from `conf/rocoto-users.yaml`; Tomcat's own realm is not involved
 | `conf/rocoto.yaml` | built-in auth, policy rules for the demo MBean, audit file, metric rules |
 | `conf/rocoto-users.yaml` | pre-generated demo users and token (hashes only) |
 | `test.sh` | runs the requests below and checks the status codes |
+| `test.ps1` | the same for PowerShell (Windows: `docker compose up -d`, then `.\test.ps1`) |
 
 ## Demo credentials (demo only)
 

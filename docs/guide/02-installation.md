@@ -406,6 +406,91 @@ with the official images:
 `glassfish-web.xml` maps realm groups named `rocoto-reader`, `rocoto-operator` and `rocoto-admin`
 onto the roles of the same name (relevant for `auth.mode: container` or `chain`).
 
+## Windows
+
+Rocoto is plain Java: `rocoto.war`, `rocoto-tools.jar` and the embedded `-all.jar` files are the
+same on Windows, Linux and macOS, and nothing in them calls a shell. The CI builds Rocoto and runs
+all unit and integration tests (embedded Tomcat, Undertow, Netty) on `windows-latest`. The smoke
+tests against real servers run in Linux containers only - the servers themselves have not been
+smoke-tested on Windows.
+
+What differs is how you type the commands of this guide:
+
+| This guide (Unix) | Windows (PowerShell) |
+|---|---|
+| `$CATALINA_BASE/conf`, `$JBOSS_HOME/...` | `$env:CATALINA_BASE\conf`, `$env:JBOSS_HOME\...` |
+| `cp rocoto.war $CATALINA_BASE/webapps/` | `Copy-Item rocoto.war $env:CATALINA_BASE\webapps\` |
+| `jboss-cli.sh`, `standalone.sh`, `asadmin` | `jboss-cli.bat` / `jboss-cli.ps1`, `standalone.bat`, `asadmin.bat` |
+| `bin/setenv.sh` | `bin\setenv.bat` ([`scripts/tomcat/setenv.bat`](scripts/tomcat/setenv.bat)); for a Windows service: `tomcat10w.exe`, tab "Java" |
+| `curl ...` | `curl.exe ...` (part of Windows 10/11; plain `curl` is an alias of `Invoke-WebRequest` in Windows PowerShell 5) |
+| `java -jar rocoto-tools.jar ...` | identical |
+| `export ROCOTO_CONFIG=/etc/rocoto/rocoto.yaml` | `$env:ROCOTO_CONFIG = 'C:\rocoto\rocoto.yaml'`, or `-Drocoto.config=C:\rocoto\rocoto.yaml` in the server's Java options |
+
+Things to know:
+
+- **Paths in `rocoto.yaml`:** write them with forward slashes (`C:/rocoto/rocoto-users.yaml`) or
+  in single quotes; in double quoted YAML strings `\` is an escape character.
+- **File permissions:** NTFS has no POSIX permissions, so Rocoto cannot warn about a user store
+  that other accounts can read, and `rocoto-tools` cannot restrict the file it writes. Protect
+  `rocoto-users.yaml` and the keystores with an ACL yourself, for example
+  `icacls rocoto-users.yaml /inheritance:r /grant:r "<server account>:R" "BUILTIN\Administrators:F"`
+  (`<server account>` is the account your server runs as, for a Tomcat service by default
+  `NT AUTHORITY\LocalService`).
+- **Passwords:** let `rocoto-tools` prompt for the password. Piping it with `--password-stdin`
+  works in PowerShell 7; Windows PowerShell 5 sends non-ASCII characters in its own encoding.
+- **The `*.sh` files in this repository** (`ci/`, `examples/*/test.sh`, `gen-certs.sh`, ...) are
+  test and demo helpers, not part of Rocoto. The Docker based examples run unchanged with Docker
+  Desktop: `docker compose up -d` instead of `make up`, then the `*.ps1` script where there is one
+  (see below), or the `*.sh` scripts from WSL 2 or Git Bash. `.gitattributes` keeps their LF line ends
+  in a Windows checkout.
+
+### First calls with PowerShell
+
+The calls of "[First calls](#first-calls)" without `curl`. These lines work in Windows
+PowerShell 5.1 and in PowerShell 7:
+
+```powershell
+# HTTP Basic: PowerShell asks for the password, it never appears in the command line
+$cred = Get-Credential ada
+$pair = "$($cred.UserName):$($cred.GetNetworkCredential().Password)"
+$basic = @{ Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($pair)) }
+Invoke-RestMethod -Uri https://server:8443/rocoto/api/v1/server -Headers $basic
+
+# API token; the ObjectName is one URL-encoded path segment
+$bearer = @{ Authorization = "Bearer $token" }
+$mbean = [Uri]::EscapeDataString('java.lang:type=Memory')
+(Invoke-RestMethod -Uri "https://server:8443/rocoto/api/v1/mbeans/$mbean/attributes/HeapMemoryUsage" -Headers $bearer).value.used
+
+# RPC style: the Content-Type is mandatory
+$body = @{ mbean = 'java.lang:type=Memory'; attribute = 'HeapMemoryUsage' } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri https://server:8443/rocoto/api/v1/read -Headers $bearer `
+  -ContentType 'application/json' -Body $body
+```
+
+`Invoke-RestMethod` parses the JSON answer into an object (`.value.used`). PowerShell 7 can do the
+header itself: `Invoke-RestMethod -Uri ... -Authentication Basic -Credential $cred`. It refuses to
+send credentials over plain `http://` unless you add `-AllowUnencryptedAuthentication` - as
+Rocoto does on the server side, see below.
+
+An HTTP error (401, 403, 404, ...) is thrown as an exception; Rocoto's JSON error is in
+`$_.ErrorDetails.Message`:
+
+```powershell
+try {
+    Invoke-RestMethod -Uri https://server:8443/rocoto/api/v1/mbeans/nope%3Atype%3DNone -Headers $bearer
+} catch {
+    $_.ErrorDetails.Message | ConvertFrom-Json     # status: 404, error: No MBean registered as nope:type=None
+}
+```
+
+Complete scripts: [`examples/clients/powershell`](../../examples/clients/powershell/rocoto-client.ps1)
+(read, bulk, exec, Server-Sent Events and WebSocket with .NET's `HttpClient` and
+`ClientWebSocket`), [`examples/tomcat-builtin/test.ps1`](../../examples/tomcat-builtin/test.ps1)
+and `get-token.ps1` / `call-rocoto.ps1` in
+[`examples/wildfly-oidc-keycloak`](../../examples/wildfly-oidc-keycloak/README.md). CI runs the
+first two with PowerShell 7. If Windows refuses to run a downloaded script, allow it for the
+session: `Set-ExecutionPolicy -Scope Process RemoteSigned`.
+
 ## Creating the first user and token
 
 Out of the box the user store is empty, so nobody can log in. Credentials are managed with

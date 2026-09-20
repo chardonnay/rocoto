@@ -15,6 +15,7 @@ Elytron is not involved, so the same configuration works on Tomcat and Payara.
 | `conf/rocoto-users.yaml` | the `prometheus` API token (JWT and API tokens coexist) |
 | `get-token.sh` | password grant with `curl`, prints the access token |
 | `call-rocoto.sh` | gets a token, prints the relevant claims, calls Rocoto |
+| `get-token.ps1`, `call-rocoto.ps1` | the same for PowerShell: `.\call-rocoto.ps1 -User ken -Path /api/v1/resources/threadpools` |
 
 ## Demo credentials (demo only)
 
