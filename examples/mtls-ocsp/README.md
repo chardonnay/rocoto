@@ -46,7 +46,7 @@ B=https://localhost:8443/rocoto
 
 # Valid certificate: the name is the CN, the role comes from the mapping
 curl -s --cacert certs/ca.crt --cert certs/client.crt --key certs/client.key $B/api/v1/server
-# {"rocoto":{"version":"0.1.0-SNAPSHOT","authMode":"builtin"},"server":{...},
+# {"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{...},
 #  "caller":{"name":"ops-alice","roles":["rocoto-operator"],"authenticatedBy":"mtls"}}
 
 # Revoked certificate: the TLS handshake succeeds, Rocoto rejects the caller

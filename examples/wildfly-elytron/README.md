@@ -45,7 +45,7 @@ make down
 B=http://localhost:8080/rocoto
 
 curl -s -u wilma:demo-password-123 $B/api/v1/server
-# {"rocoto":{"version":"0.1.0-SNAPSHOT","authMode":"chain"},
+# {"rocoto":{"version":"0.1.0","authMode":"chain"},
 #  "server":{"adapter":"wildfly","product":"WildFly ...","version":"...","serverState":"running","launchType":"STANDALONE"},
 #  "caller":{"name":"wilma","roles":["rocoto-admin"],"authenticatedBy":"container"}}
 

@@ -13,7 +13,7 @@ Runnable project: [`examples/custom-adapter`](../../examples/custom-adapter/READ
 ## Prerequisites
 
 - JDK 17+, Maven
-- `mvn install -DskipTests` in the repository root: `io.rocoto:rocoto-adapters:0.1.0-SNAPSHOT` is
+- `mvn install -DskipTests` in the repository root: `io.rocoto:rocoto-adapters:0.1.0` is
   not on Maven Central and must be in your local repository
 
 ## The SPI
@@ -53,7 +53,7 @@ everything except detection and the data.
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <rocoto.version>0.1.0-SNAPSHOT</rocoto.version>
+    <rocoto.version>0.1.0</rocoto.version>
   </properties>
 
   <dependencies>
