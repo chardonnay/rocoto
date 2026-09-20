@@ -67,7 +67,19 @@ trap cleanup EXIT
 check() { # description, expected, actual
   if [ "$2" = "$3" ]; then echo "  ok    $1"; else echo "  FAIL  $1 (expected '$2', got '$3')"; FAILED=1; fi
 }
-status() { curl -sk -o /dev/null -w '%{http_code}' "$@" || true; }
+# Payara / GlassFish on a busy runner occasionally drop a connection (HTTP code 000, curl exit 56):
+# only that is retried, every HTTP answer - also 401 and 503 - is returned as it is.
+status() {
+  local code=000
+  for _ in 1 2 3 4 5; do
+    code="$(curl -sk -o /dev/null -w '%{http_code}' "$@" || true)"
+    [ "$code" != "000" ] && break
+    sleep 2
+  done
+  echo "$code"
+}
+# GET with credentials; retries connection errors only (no -f: HTTP errors are answers, not errors).
+get() { curl -sk --retry 5 --retry-delay 2 --retry-connrefused --retry-all-errors "$@"; }
 asadmin() { docker exec "$NAME" "$ASADMIN" --user admin --passwordfile "$ADMIN_PASSWORDFILE" "$@"; }
 
 cat > "$WORK/rocoto.yaml" <<YAML
@@ -118,7 +130,7 @@ done
 echo "Without AMX"
 check "plain HTTP listener refuses credentials" 403 \
   "$(status -u "ada:$PASSWORD" "http://localhost:$HTTP_PORT/rocoto/api/v1/server")"
-SERVER="$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/server")"
+SERVER="$(get -u "ada:$PASSWORD" "$BASE/api/v1/server")"
 check "Payara / GlassFish is detected" payara "$(echo "$SERVER" | jq -r .server.adapter)"
 check "built-in user" basic "$(echo "$SERVER" | jq -r .caller.authenticatedBy)"
 check "amxLoaded is false" false "$(echo "$SERVER" | jq -r .server.amxLoaded)"
@@ -132,13 +144,13 @@ PATH_STATUS=200
 case "$FLAVOR:$(image_env GLASSFISH_VERSION 2>/dev/null || true)" in glassfish:7.*) PATH_STATUS=503 ;; esac
 check "ObjectName in the URL path (503 = known GlassFish 7 defect)" "$PATH_STATUS" \
   "$(status -u "ada:$PASSWORD" "$BASE/api/v1/mbeans/java.lang%3Atype%3DMemory/attributes/HeapMemoryUsage")"
-check "resources are empty, not an error" 0 "$(curl -sk -u "ada:$PASSWORD" "$BASE/api/v1/resources/threadpools" | jq -r '.items | length')"
+check "resources are empty, not an error" 0 "$(get -u "ada:$PASSWORD" "$BASE/api/v1/resources/threadpools" | jq -r '.items | length')"
 
 echo "Container authentication (file realm, auth.mode chain)"
 docker exec "$NAME" sh -c "cat $ADMIN_PASSWORDFILE > /tmp/passwords.txt; echo 'AS_ADMIN_USERPASSWORD=$REALM_PASSWORD' >> /tmp/passwords.txt"
 docker exec "$NAME" "$ASADMIN" --user admin --passwordfile /tmp/passwords.txt \
   create-file-user --groups rocoto-operator carl >/dev/null
-CARL="$(curl -sk -u "carl:$REALM_PASSWORD" "$BASE/api/v1/server")"
+CARL="$(get -u "carl:$REALM_PASSWORD" "$BASE/api/v1/server")"
 check "realm user is authenticated by the container" container "$(echo "$CARL" | jq -r .caller.authenticatedBy)"
 check "realm group becomes a Rocoto role (glassfish-web.xml)" rocoto-operator "$(echo "$CARL" | jq -r '.caller.roles[0]')"
 check "wrong realm password" 401 "$(status -u carl:wrong "$BASE/api/v1/server")"
@@ -166,7 +178,7 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 check "amxLoaded is true" true "$AMX_LOADED"
-res() { curl -sk --retry 5 --retry-delay 2 --retry-all-errors -u "ada:$PASSWORD" "$BASE/api/v1/resources/$1"; }
+res() { get -u "ada:$PASSWORD" "$BASE/api/v1/resources/$1"; }
 # AMX loads its MBean tree asynchronously: give it up to a minute before asserting anything.
 for _ in $(seq 1 30); do
   [ "$(res deployments | jq -r '[.items[].name] | index("rocoto") != null' 2>/dev/null)" = "true" ] \
@@ -179,7 +191,7 @@ check "thread pool of http-listener-2" true \
   "$(res threadpools | jq -r '[.items[] | select(.name == "network/http-listener-2/thread-pool") | .maxThreads != null] | any')"
 check "sessions are named after the application" true "$(res sessions | jq -r '[.items[].name] | index("rocoto/server") != null')"
 check "data source $POOL" true "$(res datasources | jq -r --arg p "$POOL" '[.items[] | select(.name | endswith($p)) | .activeConnections != null] | any')"
-METRICS="$(curl -sk --retry 5 --retry-delay 2 --retry-all-errors -u "ada:$PASSWORD" "$BASE/metrics")"
+METRICS="$(get -u "ada:$PASSWORD" "$BASE/metrics")"
 for metric in jvm_memory_heap_used_bytes payara_threads_busy payara_jdbc_connections_used payara_sessions_active \
               payara_requests_total payara_request_errors_total; do
   check "metric $metric" true "$(echo "$METRICS" | grep -c "^$metric" >/dev/null && echo true || echo false)"
