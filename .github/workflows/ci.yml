@@ -25,7 +25,7 @@ jobs:
         run: mvn -B -ntp verify
       - name: Keep the artifacts for the server smoke tests
         if: matrix.java == '17'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rocoto
           path: |
