@@ -17,7 +17,8 @@ keys or API details; such changes are listed under "Changed".
 
 ### Changed
 
-- Undertow 2.4 (was 2.3) in `rocoto-undertow` and its all-jar.
+- Undertow 2.4 (was 2.3) in `rocoto-undertow`, Netty 4.2 (was 4.1) in `rocoto-netty`, SnakeYAML 2.7
+  (was 2.3).
 
 ### Fixed
 
