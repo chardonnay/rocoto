@@ -137,8 +137,16 @@ class MBeanRoundTripTest {
 
     @Test
     void errorsAreClassified() throws Exception {
-        assertEquals(MBeanAccessException.Kind.ATTRIBUTE_NOT_FOUND,
-                assertThrows(MBeanAccessException.class, () -> access.getAttribute(name, "Nope")).kind());
+        MBeanAccessException noAttribute =
+                assertThrows(MBeanAccessException.class, () -> access.getAttribute(name, "Nope"));
+        assertEquals(MBeanAccessException.Kind.ATTRIBUTE_NOT_FOUND, noAttribute.kind());
+        assertEquals("No such attribute: Nope", noAttribute.getMessage());
+        // The JDK's MXBeans already say "No such attribute: X" in their exception: no doubled prefix.
+        ObjectName runtime = ObjectName.getInstance("java.lang:type=Runtime");
+        assertEquals("No such attribute: DoesNotExist",
+                assertThrows(MBeanAccessException.class, () -> access.getAttribute(runtime, "DoesNotExist")).getMessage());
+        assertEquals("No such attribute: DoesNotExist",
+                assertThrows(MBeanAccessException.class, () -> access.setAttribute(runtime, "DoesNotExist", 1)).getMessage());
         assertEquals(MBeanAccessException.Kind.FAILED,
                 assertThrows(MBeanAccessException.class,
                         () -> access.invoke(name, "fail", new Object[0], new String[0])).kind());
