@@ -42,7 +42,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.6.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -106,6 +105,15 @@
                     <exclude>META-INF/MANIFEST.MF</exclude>
                     <exclude>module-info.class</exclude>
                     <exclude>META-INF/versions/*/module-info.class</exclude>
+                    <!-- The shade plugin relocates the classes but not their multi-release copies:
+                         those would stay in the original packages and shadow the application's own
+                         jboss-threads / wildfly-common on newer JDKs. The relocated base classes
+                         run on every JDK 17+. -->
+                    <exclude>META-INF/versions/*/org/jboss/**</exclude>
+                    <exclude>META-INF/versions/*/org/wildfly/**</exclude>
+                    <exclude>META-INF/versions/*/org/xnio/**</exclude>
+                    <exclude>META-INF/versions/*/io/undertow/**</exclude>
+                    <exclude>META-INF/versions/*/io/smallrye/**</exclude>
                   </excludes>
                 </filter>
               </filters>
