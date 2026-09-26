@@ -25,7 +25,7 @@ jobs:
         run: mvn -B -ntp verify
       - name: Keep the artifacts for the server smoke tests
         if: matrix.java == '17'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rocoto
           path: |
@@ -69,10 +69,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
       - name: Demo application
         run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
       - name: Run
@@ -99,7 +99,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Demo application
@@ -117,7 +117,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Run
@@ -133,7 +133,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Run
@@ -161,7 +161,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Run
@@ -188,7 +188,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Run
@@ -212,7 +212,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Run
@@ -234,7 +234,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Run
@@ -252,7 +252,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto
       - name: Start examples/tomcat-builtin
@@ -299,7 +299,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Relative links
         run: python3 ci/docs/check-links.py
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Mermaid diagrams

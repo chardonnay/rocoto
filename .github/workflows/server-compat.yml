@@ -26,7 +26,7 @@ jobs:
           cache: maven
       - run: mvn -B -ntp -q install -DskipTests
       - run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: rocoto-compat
           retention-days: 3
@@ -58,7 +58,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: rocoto-compat
       - name: Run ${{ matrix.script }}
