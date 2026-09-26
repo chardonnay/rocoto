@@ -28,7 +28,7 @@ jobs:
           echo "VERSION=$version" >> "$GITHUB_ENV"
       - name: Build, unit tests and integration tests
         run: mvn -B -ntp verify
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
       - name: Same WAR on linux/arm64 and linux/amd64
         run: |
           mvn -B -ntp -q -f examples/demo-app/pom.xml package

@@ -72,7 +72,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: rocoto
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
       - name: Demo application
         run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
       - name: Run
