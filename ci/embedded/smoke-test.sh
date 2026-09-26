@@ -105,6 +105,10 @@ for server in undertow netty; do
   check "credentials over plain HTTP are refused" 403 "$(status -u "rita:$PASSWORD" "http://localhost:$PORT/rocoto/api/v1/server")"
   check "the server of the agent is relocated (no clash with the application's own $server)" true \
     "$([ "$(unzip -Z1 "$ALL" | grep -c "^io/rocoto/shaded/" || true)" -gt 0 ] && echo true || echo false)"
+  # Also the multi-release copies (META-INF/versions/N/...): the shade plugin does not relocate them.
+  check "no server class left in its original package" "" \
+    "$(unzip -Z1 "$ALL" | grep '\.class$' | sed 's#^META-INF/versions/[0-9]*/##' \
+      | grep -E '^(io/undertow|io/netty|org/xnio|org/jboss|org/wildfly|io/smallrye)/' | head -3 || true)"
   stop
 done
 

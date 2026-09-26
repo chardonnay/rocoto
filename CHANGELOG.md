@@ -15,8 +15,16 @@ keys or API details; such changes are listed under "Changed".
   SSE and WebSocket, `test.ps1` for the Tomcat example, `get-token.ps1` / `call-rocoto.ps1` for
   the Keycloak example; first calls with `Invoke-RestMethod` in the installation guide.
 
+### Changed
+
+- Undertow 2.4 (was 2.3) in `rocoto-undertow`, Netty 4.2 (was 4.1) in `rocoto-netty`, SnakeYAML 2.7
+  (was 2.3).
+
 ### Fixed
 
+- The Undertow all-jar no longer contains unrelocated multi-release copies of wildfly-common
+  (and, with Undertow 2.4, jboss-threads) classes, which could shadow the application's own
+  classes when the jar is used as a Java agent.
 - The error for an unknown attribute of a JDK MBean no longer repeats its prefix
   ("No such attribute: No such attribute: X").
 
