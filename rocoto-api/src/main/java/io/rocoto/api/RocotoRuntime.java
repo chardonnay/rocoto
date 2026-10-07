@@ -16,7 +16,8 @@ import io.rocoto.core.config.ConfigLoader;
 import io.rocoto.core.jmx.MBeanServerAccess;
 import io.rocoto.metrics.MetricProfiles;
 import io.rocoto.metrics.MetricsCollector;
-import io.rocoto.metrics.OtlpExporter;
+import io.rocoto.metrics.format.MetricFormats;
+import io.rocoto.metrics.push.MetricsPushers;
 import io.rocoto.security.RequestPipeline;
 import io.rocoto.security.RocotoSecurity;
 import io.rocoto.security.tls.OutboundTls;
@@ -35,8 +36,10 @@ public final class RocotoRuntime implements AutoCloseable {
     private final ServerAdapter adapter;
     private final RequestPipeline pipeline;
     private final MetricsCollector metrics;
-    private final OtlpExporter otlp;
+    private final MetricsPushers pushers;
+    private final MetricFormats metricFormats;
     private final SubscriptionManager subscriptions;
+    private final io.rocoto.core.format.DocumentFormats formats;
     private final TlsSelfProbe tlsProbe;
     private final String version;
 
@@ -52,14 +55,28 @@ public final class RocotoRuntime implements AutoCloseable {
         this.metrics = metricsConfig.bool("enabled", true)
                 ? new MetricsCollector(MetricProfiles.load(metricsConfig, adapter.id(), loaded.directory()))
                 : null;
-        // The outbound TLS context is only built when something uses it: the JVM's default trust
-        // store may be unusable (GlassFish 8 points it to a domain store without CA certificates).
-        Config otlpConfig = metricsConfig.sub("otlp");
-        this.otlp = metrics == null || !otlpConfig.bool("enabled", false) ? null : OtlpExporter.start(otlpConfig,
-                OutboundTls.context(config.sub("tls.outbound")), metrics, pipeline);
         this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"), security::stillValid);
         this.tlsProbe = TlsSelfProbe.start(config.sub("tls.selfProbe"));
+        this.metricFormats = new MetricFormats(metricsConfig);
+        // The outbound TLS context is only built when something uses it: the JVM's default trust
+        // store may be unusable (GlassFish 8 points it to a domain store without CA certificates).
+        Config outbound = config.sub("tls.outbound");
+        javax.net.ssl.SSLContext[] tls = new javax.net.ssl.SSLContext[1];
+        java.util.function.Supplier<javax.net.ssl.SSLContext> lazyTls = () -> {
+            if (tls[0] == null) {
+                tls[0] = OutboundTls.context(outbound);
+            }
+            return tls[0];
+        };
+        this.pushers = metrics == null ? null : MetricsPushers.start(metricsConfig, lazyTls, metrics, pipeline,
+                tlsProbe == null ? null : tlsProbe::metrics);
         Operations.maxPatternMBeans = config.integer("api.maxPatternMBeans", 1000);
+        try {
+            this.formats = io.rocoto.core.format.DocumentFormats.of(config.has("api.formats")
+                    ? config.strings("api.formats") : io.rocoto.core.format.DocumentFormats.ALL);
+        } catch (IllegalArgumentException e) {
+            throw new io.rocoto.core.config.ConfigException("api.formats: " + e.getMessage());
+        }
     }
 
     /** Builds the runtime. Any configuration error aborts start-up: Rocoto fails closed. */
@@ -74,6 +91,16 @@ public final class RocotoRuntime implements AutoCloseable {
     /** For components without access to the servlet context (WebSocket endpoints). */
     public static RocotoRuntime current() {
         return current;
+    }
+
+    /** Formats of {@code GET /metrics}. */
+    public MetricFormats metricFormats() {
+        return metricFormats;
+    }
+
+    /** Output formats enabled with {@code api.formats}. */
+    public io.rocoto.core.format.DocumentFormats formats() {
+        return formats;
     }
 
     public Config config() {
@@ -135,8 +162,8 @@ public final class RocotoRuntime implements AutoCloseable {
         if (tlsProbe != null) {
             tlsProbe.close();
         }
-        if (otlp != null) {
-            otlp.close();
+        if (pushers != null) {
+            pushers.close();
         }
         security.close();
     }

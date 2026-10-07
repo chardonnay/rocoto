@@ -252,7 +252,7 @@ case "$caller" in
 esac
 metrics="$(curl -s -H "Authorization: Bearer $TOKEN" "$ROCOTO_URL/metrics")"
 for metric in jvm_memory_heap_used_bytes wildfly_undertow_requests_total wildfly_datasource_connections_active demo_orders_processed_total; do
-  if printf '%s\n' "$metrics" | grep -q "^$metric"; then
+  if grep -q "^$metric" <<< "$metrics"; then   # no pipe: with pipefail an early grep exit would fail the test
     echo "ok         metric $metric"
   else
     echo "FAIL       metric $metric missing"; failures=$((failures + 1))

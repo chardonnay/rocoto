@@ -41,8 +41,14 @@ public class ApiServlet extends HttpServlet {
             RocotoRuntime runtime = Http.runtime(getServletContext());
             List<String> path = Http.pathSegments(request, PREFIX);
             String method = request.getMethod();
+            if (path.equals(List.of("style.css")) && method.equals("GET")) {
+                styleSheet(response);
+                return;
+            }
+            // Resolve the output format before doing anything: a bad format must not execute an operation.
+            Http.format(request);
             if (path.equals(List.of("health", "live")) && method.equals("GET")) {
-                Http.writeJson(response, 200, Map.of("status", "UP"));
+                Http.write(request, response, 200, Map.of("status", "UP"));
                 return;
             }
             CallContext ctx = Http.context(request, "api");
@@ -53,10 +59,23 @@ public class ApiServlet extends HttpServlet {
                 default -> throw new ApiException(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method not allowed");
             };
             if (result != null) {
-                Http.writeJson(response, 200, result);
+                Http.write(request, response, 200, result);
             }
         } catch (RuntimeException e) {
-            Http.writeError(response, e);
+            Http.writeError(request, response, e);
+        }
+    }
+
+    /** The stylesheet of the HTML output. Static, contains nothing about the server. */
+    private static void styleSheet(HttpServletResponse response) throws IOException {
+        try (InputStream in = ApiServlet.class.getResourceAsStream("style.css")) {
+            if (in == null) {
+                throw new ApiException(HttpServletResponse.SC_NOT_FOUND, "Stylesheet not bundled");
+            }
+            response.setStatus(200);
+            response.setContentType("text/css; charset=utf-8");
+            response.setHeader("Cache-Control", "private, max-age=3600");
+            in.transferTo(response.getOutputStream());
         }
     }
 
@@ -160,17 +179,22 @@ public class ApiServlet extends HttpServlet {
         return out;
     }
 
+    private static volatile Object openApiDocument;
+
+    /** The bundled OpenAPI document, served in any output format (YAML is popular for OpenAPI). */
     private Object openApi(HttpServletResponse response) throws IOException {
-        try (InputStream in = ApiServlet.class.getResourceAsStream("openapi.json")) {
-            if (in == null) {
-                throw new ApiException(HttpServletResponse.SC_NOT_FOUND, "OpenAPI document not bundled");
+        Object doc = openApiDocument;
+        if (doc == null) {
+            try (InputStream in = ApiServlet.class.getResourceAsStream("openapi.json")) {
+                if (in == null) {
+                    throw new ApiException(HttpServletResponse.SC_NOT_FOUND, "OpenAPI document not bundled");
+                }
+                doc = io.rocoto.core.json.JsonParser.parse(new String(in.readAllBytes(),
+                        java.nio.charset.StandardCharsets.UTF_8), 128);
+                openApiDocument = doc;
             }
-            response.setStatus(200);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            in.transferTo(response.getOutputStream());
-            return null;
         }
+        return doc;
     }
 
     // ---- PUT -----------------------------------------------------------------------------

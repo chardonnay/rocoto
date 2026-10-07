@@ -1,0 +1,102 @@
+/* Rocoto HTML output. Served from /api/v1/style.css so the pages need no inline styles. */
+:root {
+  --bg: #fbfaf8;
+  --fg: #1d1b19;
+  --muted: #6b655e;
+  --line: #e4ded6;
+  --head: #f2ede6;
+  --accent: #b3261e;
+  --stripe: #f7f3ee;
+  --num: #1f4e79;
+  --alert-bg: #fdecea;
+  --alert-line: #e0a29c;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171514;
+    --fg: #ece7e1;
+    --muted: #a39b92;
+    --line: #34302c;
+    --head: #221f1d;
+    --accent: #f2766c;
+    --stripe: #1d1a18;
+    --num: #8cbcf0;
+    --alert-bg: #3a1c1a;
+    --alert-line: #7a3530;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+main { padding: 16px; max-width: 1400px; }
+h1 {
+  margin: 0 0 12px;
+  font: 600 15px/1.3 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+div.alert {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: var(--alert-bg);
+  border: 1px solid var(--alert-line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+}
+div.alert strong { color: var(--accent); white-space: nowrap; }
+div.alert span { overflow-wrap: anywhere; }
+dl.meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 16px;
+  margin: 0 0 16px;
+}
+dl.meta dt { color: var(--muted); }
+dl.meta dd { margin: 0; overflow-wrap: anywhere; }
+.scroll { overflow-x: auto; }
+/* Wide tables scroll sideways instead of squeezing every cell to one character. */
+table { border-collapse: collapse; width: max-content; min-width: 100%; }
+caption { text-align: left; color: var(--muted); padding: 0 0 6px; }
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--head);
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* Stripe the rows of the outer table only, never the rows of nested tables inside its cells. */
+table:not(.nested) > tbody > tr:nth-child(even) > td { background: var(--stripe); }
+td { max-width: 48ch; overflow-wrap: break-word; }
+td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--num); }
+td.empty { color: var(--muted); text-align: center; }
+table.nested { width: auto; min-width: 0; font-size: 13px; }
+table.nested th, table.nested td { padding: 1px 8px 1px 0; border: 0; background: none; }
+table.nested th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+table.nested td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+ul { margin: 0; padding-left: 18px; }
+.null { color: var(--muted); font-style: italic; }
+.list { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bool { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (max-width: 600px) {
+  main { padding: 12px; }
+  th, td { padding: 5px 6px; }
+}

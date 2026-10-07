@@ -37,6 +37,7 @@ mvn install -DskipTests      # rocoto-war/target/rocoto.war, rocoto-tools/target
 |------|----------|
 | [prometheus-grafana](prometheus-grafana.md) | Scrape `/rocoto/metrics` with a token, provisioned Grafana dashboard |
 | [otlp-collector](otlp-collector.md) | Push metrics to an OpenTelemetry Collector |
+| [metrics-push](metrics-push.md) | Push metrics to Graphite, StatsD and InfluxDB, or let Telegraf pull line protocol |
 | [custom-metrics-profile](custom-metrics-profile.md) | Write your own mapping rules |
 
 ## Clients

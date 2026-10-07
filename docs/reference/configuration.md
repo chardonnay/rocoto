@@ -94,20 +94,55 @@ health:
 api:
   maxBulkRequests: 100
   maxPatternMBeans: 1000        # a pattern read matching more MBeans is refused with 413
+  formats: [json, xml, yaml, toml, html, csv, text, table]   # output formats; json is always on
 
 metrics:
   enabled: true
   profiles: [jvm, auto]         # jvm | tomcat | wildfly | payara | auto | <path to profile file>
   rules: []                     # inline mapping rules, same format as a profile
-  otlp:
-    enabled: false
-    endpoint: https://collector:4318/v1/metrics
-    allowInsecure: false        # allow http:// endpoints
-    intervalSeconds: 60
-    serviceName: rocoto
-    resourceAttributes: {}
-    headers: {}                 # e.g. { Authorization: "${env:OTLP_AUTH}" }
-    roles: [rocoto-reader]      # roles of the internal identity "otlp-exporter"
+  push:                         # push exporters, see guide chapter 06
+    otlp:
+      enabled: false
+      endpoint: https://collector:4318/v1/metrics
+      allowInsecure: false      # allow http:// endpoints
+      intervalSeconds: 60
+      serviceName: rocoto
+      resourceAttributes: {}
+      headers: {}               # e.g. { Authorization: "${env:OTLP_AUTH}" }
+      roles: [rocoto-reader]    # roles of the internal identity "otlp-exporter"
+    graphite:
+      enabled: false
+      host: null                # required
+      port: 2003
+      tls: false                # TLS with host name verification, trust from tls.outbound
+      prefix: rocoto            # also used by /metrics?format=graphite
+      tags: false               # Graphite 1.1 tags instead of path segments
+      intervalSeconds: 60
+      roles: [rocoto-reader]
+    statsd:
+      enabled: false
+      host: 127.0.0.1
+      port: 8125
+      prefix: rocoto            # also used by /metrics?format=statsd
+      tags: false               # DogStatsD tags (|#label:value)
+      maxPacketBytes: 1432
+      intervalSeconds: 10
+      roles: [rocoto-reader]
+    influx:
+      enabled: false
+      url: null                 # required, e.g. https://influx:8086
+      allowInsecure: false      # allow http:// URLs
+      version: 2                # 2 (InfluxDB 2.x/3.x/Cloud) or 1
+      org: null                 # version 2, required
+      bucket: null              # version 2, required
+      token: null               # version 2, e.g. "${env:INFLUX_TOKEN}"
+      database: null            # version 1, required
+      username: null            # version 1, optional
+      password: null            # version 1, optional
+      precision: ns             # ns | us | ms | s
+      intervalSeconds: 60
+      roles: [rocoto-reader]
+  otlp: {}                      # deprecated alias of push.otlp (used when push.otlp is absent)
 
 stream:
   websocket: true

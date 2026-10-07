@@ -13,7 +13,7 @@ curl -s -H "Authorization: Bearer $TOKEN" $ROCOTO/api/v1/server
 ```
 
 A machine-readable description of the same API is served at `GET /api/v1/openapi.json`
-(OpenAPI 3.0.3).
+(OpenAPI 3.0.3; `?format=yaml` for YAML).
 
 ## General rules
 
@@ -27,8 +27,10 @@ A machine-readable description of the same API is served at `GET /api/v1/openapi
   or listed in `cors.allowedOrigins`. Requests without `Origin` but with a `Sec-Fetch-Site`
   header other than `same-origin` or `none` - a browser loading an API URL from a foreign page
   through `<img>`, `<script>` or a link - are rejected with `403 Cross-site request denied`.
-- Responses are JSON (`application/json`, UTF-8) and - including all error responses, the `503`
-  of a failed start-up too - carry `Cache-Control: no-store`,
+- Responses are JSON (`application/json`, UTF-8) unless another format is requested with
+  `?format=xml|yaml|toml|html|csv|text|table` or the `Accept` header - see
+  [15 - Output formats](15-output-formats.md). This chapter shows JSON. All responses - including
+  all error responses, the `503` of a failed start-up too - carry `Cache-Control: no-store`,
   `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a restrictive
   `Content-Security-Policy` and `Referrer-Policy: no-referrer`.
 - Reads are allowed for the roles in `policy.readRoles`. `write` and `exec` always need an explicit
@@ -475,6 +477,7 @@ Stack traces and exception class names of the server are never returned.
 | 404 | Unknown path, MBean, attribute, operation, resource kind or bulk `type` | `No MBean registered as x:type=Y` |
 | 405 | Method other than GET, PUT, POST | `Method not allowed` |
 | 413 | Body larger than 1 MiB, more than `api.maxBulkRequests` items, or a pattern read matching more than `api.maxPatternMBeans` MBeans | `At most 100 requests per bulk call`, `The pattern matches 4210 MBeans; at most 1000 can be read at once (api.maxPatternMBeans)` |
+| 406 | `format` names an unknown format or one not enabled in `api.formats` (checked before the request is executed) | `Unsupported format 'pdf'; available: [json, xml, ...]` |
 | 415 | POST/PUT without `Content-Type: application/json` | `Request bodies must be sent as application/json` |
 | 429 | Login locked after repeated failures (`Retry-After: 60`), or subscription limits reached | `Too many failed login attempts` |
 | 500 | The MBean threw an exception, or an unexpected error. Unexpected errors are logged on the server and reported only as `Internal error` | `IllegalStateException: pool is closed` |

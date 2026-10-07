@@ -53,6 +53,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/ServerInfo"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -95,8 +125,23 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/health": {
@@ -113,6 +158,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/Health"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -155,8 +230,23 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/health/live": {
@@ -168,8 +258,23 @@
         "responses": {
           "200": {
             "description": "UP"
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/mbeans": {
@@ -186,6 +291,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/SearchResult"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -221,6 +356,16 @@
           },
           "404": {
             "description": "MBean, attribute or operation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
             "content": {
               "application/json": {
                 "schema": {
@@ -239,6 +384,9 @@
               "default": "*:*"
             },
             "description": "ObjectName pattern"
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ]
       }
@@ -257,6 +405,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/Description"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -299,6 +477,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -310,6 +498,9 @@
               "type": "string"
             },
             "description": "URL-encoded ObjectName, e.g. java.lang%3Atype%3DMemory. Use the RPC endpoints for names containing '/'."
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ]
       }
@@ -328,6 +519,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/ReadManyResult"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -370,6 +591,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -381,6 +612,9 @@
               "type": "string"
             },
             "description": "URL-encoded ObjectName, e.g. java.lang%3Atype%3DMemory. Use the RPC endpoints for names containing '/'."
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ]
       }
@@ -399,6 +633,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/ReadResult"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -441,6 +705,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -460,6 +734,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ]
       },
@@ -476,6 +753,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/WriteResult"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -518,6 +825,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -537,6 +854,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ],
         "requestBody": {
@@ -571,6 +891,36 @@
                 "schema": {
                   "$ref": "#/components/schemas/ExecResult"
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -613,6 +963,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -632,6 +992,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ],
         "requestBody": {
@@ -670,6 +1033,36 @@
                     }
                   ]
                 }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -705,6 +1098,16 @@
           },
           "404": {
             "description": "MBean, attribute or operation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
             "content": {
               "application/json": {
                 "schema": {
@@ -723,7 +1126,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/write": {
@@ -739,6 +1147,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/WriteResult"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -775,6 +1213,16 @@
           },
           "404": {
             "description": "MBean, attribute or operation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
             "content": {
               "application/json": {
                 "schema": {
@@ -793,7 +1241,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/exec": {
@@ -809,6 +1262,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExecResult"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -845,6 +1328,16 @@
           },
           "404": {
             "description": "MBean, attribute or operation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
             "content": {
               "application/json": {
                 "schema": {
@@ -863,7 +1356,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/search": {
@@ -879,6 +1377,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SearchResult"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -915,6 +1443,16 @@
           },
           "404": {
             "description": "MBean, attribute or operation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
             "content": {
               "application/json": {
                 "schema": {
@@ -938,7 +1476,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/describe": {
@@ -954,6 +1497,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Description"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -990,6 +1563,16 @@
           },
           "404": {
             "description": "MBean, attribute or operation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
             "content": {
               "application/json": {
                 "schema": {
@@ -1016,7 +1599,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/bulk": {
@@ -1032,6 +1620,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BulkResult"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1085,6 +1703,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -1115,7 +1743,12 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/resources": {
@@ -1167,8 +1800,23 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
       }
     },
     "/resources/{kind}": {
@@ -1184,6 +1832,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Resources"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/toml": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1227,6 +1905,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -1243,6 +1931,9 @@
                 "sessions"
               ]
             }
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ]
       }
@@ -1296,6 +1987,16 @@
                 }
               }
             }
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -1306,6 +2007,9 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "$ref": "#/components/parameters/Format"
           }
         ]
       }
@@ -1451,6 +2155,41 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "406": {
+            "description": "Unsupported output format; nothing was executed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Format"
+          }
+        ]
+      }
+    },
+    "/style.css": {
+      "get": {
+        "summary": "Stylesheet of the HTML output",
+        "tags": [
+          "server"
+        ],
+        "responses": {
+          "200": {
+            "description": "CSS",
+            "content": {
+              "text/css": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -1784,6 +2523,27 @@
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "parameters": {
+      "Format": {
+        "name": "format",
+        "in": "query",
+        "required": false,
+        "description": "Output format. Without it the Accept header decides, otherwise JSON. See guide chapter 15.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "json",
+            "xml",
+            "yaml",
+            "toml",
+            "html",
+            "csv",
+            "text",
+            "table"
+          ]
         }
       }
     }

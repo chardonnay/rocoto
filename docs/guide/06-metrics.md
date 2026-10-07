@@ -1,8 +1,8 @@
 # 06 - Metrics
 
-Rocoto turns MBean attributes into metrics. `GET /metrics` serves them in Prometheus text or
-OpenMetrics format for scraping, and an optional exporter pushes them to an OpenTelemetry
-collector with OTLP. Mapping rules decide which attribute becomes which metric; bundled profiles
+Rocoto turns MBean attributes into metrics. `GET /metrics` serves them for scraping - in
+Prometheus text, OpenMetrics, InfluxDB line protocol, Graphite plaintext, StatsD or OTLP/JSON -
+and optional exporters push them to OpenTelemetry (OTLP), Graphite, StatsD and InfluxDB. Mapping rules decide which attribute becomes which metric; bundled profiles
 cover the JVM, Tomcat, WildFly and Payara.
 
 Configuration keys are listed in the [configuration reference](../reference/configuration.md)
@@ -56,6 +56,50 @@ In OpenMetrics output the family name of a counter is written without the `_tota
 `# HELP` and `# TYPE`, while the samples keep it, as the specification requires.
 
 With `metrics.enabled: false` the endpoint answers `404`.
+
+### Other formats
+
+`?format=` selects one of the time series line protocols. The samples are the same; only the
+syntax differs.
+
+| `format` | Content type | Typical consumer |
+|----------|--------------|------------------|
+| `prometheus` (default) | `text/plain; version=0.0.4` | Prometheus, VictoriaMetrics, Grafana Agent |
+| `openmetrics` | `application/openmetrics-text` | Prometheus with OpenMetrics negotiation |
+| `influx` | `text/plain` | Telegraf `inputs.http` with `data_format = "influx"`, InfluxDB tooling |
+| `graphite` | `text/plain` | scripts that forward to Carbon |
+| `statsd` | `text/plain` | debugging the StatsD export (StatsD itself is push-only) |
+| `otlp` | `application/json` | inspecting what the OTLP exporter sends, tools that read OTLP/JSON |
+
+An unknown `format` is answered with `406`.
+
+```bash
+curl -s -H "Authorization: Bearer $TOKEN" "https://server:8443/rocoto/metrics?format=influx"
+```
+
+```text
+jvm_memory_heap_used_bytes value=65677152.0 1791366991406000000
+jvm_gc_collections_total,gc=G1\ Young\ Generation value=42.0 1791366991406000000
+```
+
+- **InfluxDB line protocol**: the metric name is the measurement, labels are tags, the sample is
+  the float field `value`. `&precision=ns|us|ms|s` sets the timestamp unit (default `ns`, an
+  invalid value is `400`). Commas, blanks and equals signs are escaped; line breaks inside label
+  values are replaced, so a label can never start a second line. Empty label values (invalid as
+  tags) and NaN/infinite samples are left out.
+- **Graphite plaintext**: `prefix.metric.labelValue1.labelValue2 value timestamp` with the
+  timestamp in seconds. Every path segment is reduced to letters, digits, `_` and `-`. With
+  `metrics.push.graphite.tags: true` Graphite 1.1 tags are used instead:
+  `metric;label=value value timestamp`.
+- **StatsD**: `prefix.metric.labelValue:value|g`. When pulled, counters are reported as gauges
+  (a StatsD counter is an increment and the pull has no memory). With
+  `metrics.push.statsd.tags: true` labels become DogStatsD tags (`|#label:value`). A negative gauge
+  is sent as `0|g` followed by the value, because StatsD reads `-3|g` as "decrease by three".
+- **OTLP/JSON**: the `ExportMetricsServiceRequest` the OTLP exporter sends.
+
+Graphite and StatsD naming (prefix, tags) is taken from the push sections below, so pulled and
+pushed series carry the same names. The REST API has its own output formats (XML, YAML, CSV, ...);
+see [15 - Output formats](15-output-formats.md).
 
 ### A scoped token for the scraper
 
@@ -242,40 +286,73 @@ Check a new rule without waiting for the next scrape:
 curl -s -u rita https://server:8443/rocoto/metrics | grep shop_
 ```
 
-## OTLP push
+## Push exporters
 
-For environments without scraping, Rocoto can push the same metrics to an OpenTelemetry collector
-using OTLP/HTTP with JSON encoding. It is implemented with JDK classes; the OpenTelemetry SDK is
-not part of the WAR.
+For environments without scraping, Rocoto pushes the metrics itself. Each target has its own
+section under `metrics.push`; any number of them can run side by side.
 
 ```yaml
 metrics:
-  otlp:
-    enabled: true
-    endpoint: https://collector.example.com:4318/v1/metrics
-    intervalSeconds: 60                 # minimum 5
-    serviceName: shop-backend           # resource attribute service.name, default "rocoto"
-    resourceAttributes:
-      deployment.environment: production
-      host.name: app1
-    headers:
-      Authorization: "${env:OTLP_AUTH}"
-    roles: [rocoto-reader]              # roles of the internal identity
+  push:
+    otlp:
+      enabled: true
+      endpoint: https://collector.example.com:4318/v1/metrics
+      serviceName: shop-backend           # resource attribute service.name, default "rocoto"
+      resourceAttributes: { deployment.environment: production, host.name: app1 }
+      headers: { Authorization: "${env:OTLP_AUTH}" }
+    graphite:
+      enabled: true
+      host: carbon.example.com
+      port: 2003                          # default
+      tls: false                          # true = TLS with host name verification
+      prefix: prod.app1                   # default "rocoto"
+      tags: false                         # true = Graphite 1.1 tags instead of path segments
+    statsd:
+      enabled: true
+      host: 127.0.0.1                     # default
+      port: 8125                          # default
+      prefix: prod.app1                   # default "rocoto"
+      tags: false                         # true = DogStatsD tags (Datadog agent, Telegraf statsd)
+      maxPacketBytes: 1432                # datagram size limit
+    influx:
+      enabled: true
+      url: https://influx.example.com:8086
+      version: 2                          # 2 (InfluxDB 2.x, 3.x, Cloud) or 1
+      org: ops                            # version 2
+      bucket: jvm                         # version 2
+      token: "${env:INFLUX_TOKEN}"        # version 2
+      # database: jvm                     # version 1
+      # username / password               # version 1, optional
+      precision: s                        # ns (default), us, ms, s
 ```
 
-- The exporter has no HTTP request to take an identity from. It runs as the internal identity
-  `otlp-exporter` (source `internal`) with the roles from `metrics.otlp.roles` - and still reads
-  every value through the pipeline. Deny rules and masking apply to it like to anybody else. It
-  has no MBean scope; restrict it with its own role and policy rules if needed.
-- `endpoint` is required and must be `https` unless `metrics.otlp.allowInsecure: true`.
-- The connection uses the `tls.outbound` settings (trust store, revocation checking, optional
-  `requireStapling`); see [13 - TLS and OCSP](13-tls-and-ocsp.md).
-- Counters are sent as monotonic cumulative sums, gauges as gauges, all data points as doubles;
-  labels become data point attributes. The instrumentation scope is `io.rocoto`.
-- Failures (collector unreachable, status 300 or higher) are logged as warnings and retried at the
-  next interval; nothing is buffered.
-- The exporter only exists when `metrics.enabled` is `true`. Only the mapped metrics are pushed,
-  not the `rocoto_tls_*` metrics below.
+Settings every exporter understands: `enabled`, `intervalSeconds` (default 60, StatsD 10; minimum
+1) and `roles`.
+
+| Exporter | Transport | Notes |
+|----------|-----------|-------|
+| `otlp` | HTTP POST, OTLP/JSON | `endpoint` must be `https` unless `allowInsecure: true`. Counters become monotonic cumulative sums. |
+| `graphite` | TCP, one connection per push | Plaintext protocol, optionally TLS (`tls: true`, trust from `tls.outbound`). |
+| `statsd` | UDP datagrams | Lines are packed into datagrams of at most `maxPacketBytes`. Counters are sent as the increment since the previous push (`\|c`); the first push only establishes the baseline, a smaller value is treated as a counter reset. |
+| `influx` | HTTP POST to the write API | Version 2: `/api/v2/write?org=&bucket=&precision=` with `Authorization: Token`. Version 1: `/write?db=&precision=` with optional Basic credentials. `url` must be `https` unless `allowInsecure: true`. |
+
+- Exporters have no HTTP request to take an identity from. Each runs as the internal identity
+  `<exporter>-exporter` (`otlp-exporter`, `graphite-exporter`, ...; source `internal`) with the
+  roles from its `roles` setting (default `rocoto-reader`) and reads every value through the
+  pipeline. Deny rules and masking apply like to anybody else. Exporters have no MBean scope;
+  restrict them with their own role and policy rules if needed.
+- HTTPS and TLS connections use the `tls.outbound` settings (trust store, revocation checking,
+  optional `requireStapling`); see [13 - TLS and OCSP](13-tls-and-ocsp.md). The TLS context is
+  only built when an exporter needs it.
+- Graphite plaintext and StatsD have no authentication and, except Graphite with `tls: true`, no
+  encryption. Send them to a local agent or over a trusted network only.
+- The `rocoto_tls_*` metrics of the TLS watchdog (below) are pushed along.
+- Failures (target unreachable, HTTP status 300 or higher) are logged once as a warning, repeats
+  at `FINE`, and a recovery is logged again. Nothing is buffered; the next interval sends current
+  values.
+- Exporters only exist when `metrics.enabled` is `true`. An invalid exporter configuration aborts
+  start-up like every other configuration error.
+- The former `metrics.otlp` section still works when `metrics.push.otlp` is absent.
 
 ## TLS watchdog metrics
 
@@ -296,7 +373,8 @@ tls:
 
 The metrics appear after the first successful probe (about five seconds after start-up, then
 every `intervalSeconds`, minimum 30). They are not read from MBeans and therefore do not depend
-on the scraper's policy. The same findings show up as warnings in `GET /api/v1/health`.
+on the scraper's policy. Push exporters send them along. The same findings show up as warnings
+in `GET /api/v1/health`.
 
 Example alert rules:
 

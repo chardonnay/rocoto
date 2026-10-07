@@ -45,6 +45,11 @@ common_checks() {
   check "form posts are rejected" 415 "$(status -u "otto:$PASSWORD" -d 'x=y' "$base/api/v1/exec")"
   check "unknown path" 404 "$(status -u "rita:$PASSWORD" "$base/nope")"
   check "JVM metrics" true "$(curl -sk -H "Authorization: Bearer $TOKEN" "$base/metrics" | grep -c '^jvm_memory_heap_used_bytes ' >/dev/null && echo true || echo false)"
+  check "metrics as InfluxDB line protocol" true "$(curl -sk -H "Authorization: Bearer $TOKEN" "$base/metrics?format=influx" | grep -c '^jvm_threads_current value=' >/dev/null && echo true || echo false)"
+  check "table output" true "$(curl -sk -u "rita:$PASSWORD" "$base/api/v1/server?format=table" | grep -c '│ name' >/dev/null && echo true || echo false)"
+  check "HTML output carries the HTML CSP" true "$(curl -sk -D - -o /dev/null -u "rita:$PASSWORD" "$base/api/v1/server?format=html" | grep -ic "^content-security-policy: default-src 'none'; style-src 'self'" >/dev/null && echo true || echo false)"
+  check "stylesheet" 200 "$(status -u "rita:$PASSWORD" "$base/api/v1/style.css")"
+  check "unknown format" 406 "$(status -u "rita:$PASSWORD" "$base/api/v1/server?format=pdf")"
   check "Jolokia read" 200 "$(curl -sk -u "rita:$PASSWORD" "$base/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
   local sse
   sse="$(curl -sk -N --max-time 4 -u "rita:$PASSWORD" "$base/api/v1/subscribe?mbean=java.lang:type=Runtime&attribute=Uptime&interval=500" || true)"

@@ -9,6 +9,16 @@ keys or API details; such changes are listed under "Changed".
 
 ### Added
 
+- Output formats for the REST API: `?format=xml|yaml|toml|html|csv|text|table` or the `Accept`
+  header; errors come in the requested format, an unknown format is `406` before anything is
+  executed. `api.formats` restricts the set. HTML pages use the new `/api/v1/style.css` and a CSP
+  without scripts; CSV neutralizes formula injection. The OpenAPI document is served in every
+  format.
+- Metrics formats: `/metrics?format=influx|graphite|statsd|otlp` next to Prometheus and
+  OpenMetrics (`&precision=` for InfluxDB).
+- Push exporters for Graphite (TCP, optional TLS), StatsD (UDP, counters as deltas, optional
+  DogStatsD tags) and InfluxDB (write API v1 and v2) under `metrics.push`. Pushed series include
+  the `rocoto_tls_*` metrics.
 - Windows: the CI builds and tests on `windows-latest`; installation notes for Windows and
   `setenv.bat` for Tomcat.
 - PowerShell examples (Windows PowerShell 5.1 and PowerShell 7): client with read, bulk, exec,
@@ -16,6 +26,9 @@ keys or API details; such changes are listed under "Changed".
   the Keycloak example; first calls with `Invoke-RestMethod` in the installation guide.
 
 ### Changed
+
+- The OTLP exporter moved to `metrics.push.otlp`; `metrics.otlp` is still read when
+  `metrics.push.otlp` is absent. Its minimum interval is now one second (was five).
 
 - Undertow 2.4 (was 2.3) in `rocoto-undertow`, Netty 4.2 (was 4.1) in `rocoto-netty`, SnakeYAML 2.7
   (was 2.3).
