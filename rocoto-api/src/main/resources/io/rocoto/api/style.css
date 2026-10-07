@@ -65,7 +65,8 @@ thead th {
   font-weight: 600;
   white-space: nowrap;
 }
-tbody tr:nth-child(even) > td { background: var(--stripe); }
+/* Stripe the rows of the outer table only, never the rows of nested tables inside its cells. */
+table:not(.nested) > tbody > tr:nth-child(even) > td { background: var(--stripe); }
 td { max-width: 48ch; overflow-wrap: break-word; }
 td.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--num); }
 td.empty { color: var(--muted); text-align: center; }
