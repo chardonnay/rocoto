@@ -167,7 +167,8 @@ mbeans
   or trailing blanks are quoted.
 - Only the [table view](#the-table-view) is written; plain values next to the table (such as
   `kind` and `server` of a resources response) are not part of the CSV.
-- Nested values in a cell are written as compact JSON.
+- Lists of plain values in a cell are written comma-separated (`1, 9, 10`), other nested values
+  as compact JSON.
 - **Formula injection is neutralized**: a text cell that starts with `=`, `+`, `-`, `@`, a tab or
   a carriage return gets a leading `'`, so a spreadsheet shows it as text instead of evaluating it.
   Numbers are written as numbers.
@@ -235,8 +236,12 @@ recognizes the typical shapes:
 | one list of objects (`items` of `/resources/...`, `results` of `/bulk`) | one per element | the keys of the elements |
 | one list of values (`mbeans` of a search) | one per value | one, named after the list |
 | a pattern read (`values` maps ObjectNames to attribute maps) | one per MBean | `name` plus the attributes |
-| a multi-attribute read (`values` maps attributes to values) | one per value, nested values flattened | `name`, `value` |
-| anything else (`/server`, `/health`, errors, ...) | one per value of the flattened response | `name`, `value` |
+| a multi-attribute read (`values` maps attributes to values) | one per value; nested maps flattened, lists of plain values in one row | `name`, `value` |
+| anything else (`/server`, `/health`, errors, ...) | one per value of the flattened response, lists of plain values in one row | `name`, `value` |
+
+A list of plain values - `AllThreadIds` of `java.lang:type=Threading`, the roles of the caller -
+stays in one row: comma-separated in the text table and in CSV, as one wrapping line in HTML. Only
+the `text` format writes one line per element (`AllThreadIds[2]: 10`), which is what `grep` wants.
 
 In the first four cases the plain values next to the list or map (`kind`, `server`, `pattern`,
 `mbean`) are shown above the table (text table, HTML) or left out (CSV).

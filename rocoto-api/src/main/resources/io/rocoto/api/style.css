@@ -76,6 +76,7 @@ table.nested th { color: var(--muted); font-weight: 500; white-space: nowrap; }
 table.nested td { white-space: nowrap; font-variant-numeric: tabular-nums; }
 ul { margin: 0; padding-left: 18px; }
 .null { color: var(--muted); font-style: italic; }
+.list { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .bool { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 @media (max-width: 600px) {
   main { padding: 12px; }

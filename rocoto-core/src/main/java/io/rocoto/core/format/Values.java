@@ -20,13 +20,31 @@ public final class Values {
         return !(v instanceof Map) && !(v instanceof Collection);
     }
 
-    /** One-line text for a value: scalars as is, structures as compact JSON, {@code null} as empty. */
+    /** A non-empty list whose elements are all scalars (thread ids, tags, role names, ...). */
+    public static boolean isScalarList(Object v) {
+        return v instanceof List<?> l && !l.isEmpty() && l.stream().allMatch(Values::isScalar);
+    }
+
+    /**
+     * One-line text for a value: scalars as is, lists of scalars comma-separated, other structures
+     * as compact JSON, {@code null} as empty.
+     */
     public static String cell(Object v) {
         if (v == null) {
             return "";
         }
         if (isScalar(v)) {
             return String.valueOf(v);
+        }
+        if (isScalarList(v)) {
+            StringBuilder sb = new StringBuilder();
+            for (Object o : (List<?>) v) {
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(o == null ? "null" : String.valueOf(o));
+            }
+            return sb.toString();
         }
         return JsonWriter.toJson(v);
     }
@@ -37,27 +55,37 @@ public final class Values {
      * {@code ["..."]}; list elements as {@code [i]}. Empty structures stay as {@code {}} / {@code []}.
      */
     public static Map<String, Object> flatten(Object tree) {
+        return flatten(tree, false);
+    }
+
+    /**
+     * @param keepScalarLists {@code true}: a list of scalars stays one entry (one table row) instead
+     *                        of one entry per element
+     */
+    public static Map<String, Object> flatten(Object tree, boolean keepScalarLists) {
         Map<String, Object> out = new LinkedHashMap<>();
-        flatten("", tree, out);
+        flatten("", tree, out, keepScalarLists);
         return out;
     }
 
-    private static void flatten(String prefix, Object v, Map<String, Object> out) {
+    private static void flatten(String prefix, Object v, Map<String, Object> out, boolean keepScalarLists) {
         if (v instanceof Map<?, ?> m) {
             if (m.isEmpty() && !prefix.isEmpty()) {
                 out.put(prefix, Map.of());
                 return;
             }
             for (Map.Entry<?, ?> e : m.entrySet()) {
-                flatten(child(prefix, String.valueOf(e.getKey())), e.getValue(), out);
+                flatten(child(prefix, String.valueOf(e.getKey())), e.getValue(), out, keepScalarLists);
             }
+        } else if (keepScalarLists && isScalarList(v)) {
+            out.put(prefix.isEmpty() ? "value" : prefix, v);
         } else if (v instanceof List<?> l) {
             if (l.isEmpty()) {
                 out.put(prefix.isEmpty() ? "[]" : prefix, List.of());
                 return;
             }
             for (int i = 0; i < l.size(); i++) {
-                flatten(prefix + "[" + i + "]", l.get(i), out);
+                flatten(prefix + "[" + i + "]", l.get(i), out, keepScalarLists);
             }
         } else {
             out.put(prefix.isEmpty() ? "value" : prefix, v);

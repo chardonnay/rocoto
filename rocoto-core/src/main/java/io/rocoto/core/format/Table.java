@@ -18,7 +18,7 @@ import java.util.Set;
  *   <li>one map-valued entry whose values are all maps (a pattern read): one row per key, the key in
  *       column {@code name};</li>
  *   <li>one map-valued entry with other values (a multi-attribute read): rows {@code name, value},
- *       nested values flattened into their own rows;</li>
+ *       nested maps flattened into their own rows, lists of plain values kept in one row;</li>
  *   <li>anything else: the flattened tree as rows {@code name, value}.</li>
  * </ol>
  * Cells keep the raw tree node; each format renders nested values in its own way.
@@ -119,7 +119,7 @@ public record Table(Map<String, Object> meta, String caption, List<String> colum
     /** Name/value rows; nested values are flattened into their own rows ({@code HeapMemoryUsage.used}). */
     private static Table keyValue(Map<String, Object> meta, String caption, Map<?, ?> map) {
         List<List<Object>> rows = new ArrayList<>(map.size());
-        Values.flatten(map).forEach((k, v) -> rows.add(java.util.Arrays.asList(k, v)));
+        Values.flatten(map, true).forEach((k, v) -> rows.add(java.util.Arrays.asList(k, v)));
         return new Table(meta, caption, List.of("name", "value"), rows);
     }
 }

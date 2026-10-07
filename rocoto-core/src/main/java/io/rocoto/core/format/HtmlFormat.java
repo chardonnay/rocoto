@@ -95,6 +95,9 @@ final class HtmlFormat implements DocumentFormat {
                 out.append("</td></tr>");
             }
             out.append("</table>");
+        } else if (Values.isScalarList(v)) {
+            // Plain values (thread ids, role names, ...) as one compact, wrapping line.
+            out.append("<span class=\"list\">").append(escape(Values.cell(v))).append("</span>");
         } else if (v instanceof List<?> l) {
             if (l.isEmpty()) {
                 out.append("<span class=\"null\">[]</span>");

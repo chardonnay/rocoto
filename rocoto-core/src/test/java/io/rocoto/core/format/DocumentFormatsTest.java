@@ -213,6 +213,16 @@ class DocumentFormatsTest {
         // multi-attribute read: nested values become their own rows
         Table multi = Table.of(Map.of("mbean", "m", "values", Map.of("Heap", Map.of("used", 1L), "Verbose", true)));
         assertTrue(multi.rows().stream().anyMatch(r -> r.get(0).equals("Heap.used")), multi.toString());
+        // lists of plain values stay in one row (and one comma-separated cell)
+        Map<String, Object> threading = mapOf("mbean", "java.lang:type=Threading",
+                "values", mapOf("ThreadCount", 3L, "AllThreadIds", List.of(1L, 9L, 10L)));
+        Table threads = Table.of(threading);
+        assertEquals(2, threads.rows().size(), threads.toString());
+        assertTrue(render("table", threading).contains("│ AllThreadIds │ 1, 9, 10 │"), render("table", threading));
+        assertTrue(render("csv", threading).contains("AllThreadIds,\"1, 9, 10\"\r\n"), render("csv", threading));
+        assertTrue(render("html", threading).contains("<span class=\"list\">1, 9, 10</span>"));
+        // ... while the text format keeps one line per value for grep
+        assertTrue(render("text", threading).contains("values.AllThreadIds[2]: 10\n"));
         // everything else: flattened name/value pairs
         Table server = Table.of(Map.of("rocoto", Map.of("version", "1"), "caller", Map.of("name", "ada")));
         assertTrue(server.isKeyValue());
