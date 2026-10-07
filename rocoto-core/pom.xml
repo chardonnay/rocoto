@@ -19,5 +19,12 @@
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
     </dependency>
+    <!-- Parses the TOML output in tests. Test scope only, never shipped. -->
+    <dependency>
+      <groupId>org.tomlj</groupId>
+      <artifactId>tomlj</artifactId>
+      <version>1.1.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
