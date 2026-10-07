@@ -126,6 +126,23 @@ class OutputFormatsIT {
     }
 
     @Test
+    void metricsFormats() throws Exception {
+        String token = "Bearer " + server.tokenReader;
+        String influx = server.get("/metrics?format=influx&precision=s", token).body();
+        assertTrue(influx.lines().anyMatch(l -> l.matches("jvm_threads_current value=[0-9.]+ \\d{10}")), influx);
+        String graphite = server.get("/metrics?format=graphite", token).body();
+        assertTrue(graphite.contains("rocoto.tomcat_threads_busy.http-nio-"), graphite);
+        String statsd = server.get("/metrics?format=statsd", token).body();
+        assertTrue(statsd.lines().allMatch(l -> l.matches("[\\w.-]+:-?[0-9.E-]+\\|g")), statsd);
+        HttpResponse<String> otlp = server.get("/metrics?format=otlp", token);
+        assertTrue(contentType(otlp).startsWith("application/json"));
+        assertTrue(otlp.body().contains("\"resourceMetrics\""));
+        assertTrue(server.get("/metrics", token, "Accept", "application/openmetrics-text").body().endsWith("# EOF\n"));
+        assertEquals(406, server.get("/metrics?format=pdf", token).statusCode());
+        assertEquals(400, server.get("/metrics?format=influx&precision=weeks", token).statusCode());
+    }
+
+    @Test
     void openApiAsYaml() throws Exception {
         HttpResponse<String> r = server.get("/api/v1/openapi.json?format=yaml", reader);
         assertTrue(r.body().startsWith("openapi: 3."), r.body().substring(0, Math.min(80, r.body().length())));
