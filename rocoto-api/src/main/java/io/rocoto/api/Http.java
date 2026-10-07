@@ -182,7 +182,7 @@ public final class Http {
         if (format.id().equals("html")) {
             response.setHeader("Content-Security-Policy", HTML_CSP);
         }
-        format.write(body, options(request), response.getWriter());
+        format.write(body, options(request).withStatus(status), response.getWriter());
     }
 
     private static FormatOptions options(HttpServletRequest request) {

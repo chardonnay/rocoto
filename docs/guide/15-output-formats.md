@@ -137,6 +137,10 @@ A complete page: the plain values of the response as a definition list, the tabu
 follows the system's light or dark mode and stays usable on small screens; wide tables scroll
 sideways.
 
+Error responses (status 400 and above) start with a highlighted banner such as
+**404 Not Found** followed by the message; for the plain error body (`status` and `error`) the banner
+is the whole page. The HTTP status of the response is the real one, never `200`.
+
 Security of the HTML output:
 
 - Every value is HTML-escaped. MBean values are data that third parties can influence (an

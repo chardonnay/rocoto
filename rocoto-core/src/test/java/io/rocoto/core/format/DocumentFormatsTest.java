@@ -147,6 +147,22 @@ class DocumentFormatsTest {
     }
 
     @Test
+    void htmlMarksErrors() {
+        Map<String, Object> error = mapOf("status", 404L, "error", "No MBean registered as <x:type=y>");
+        String html = FORMATS.byId("html").toString(error, new FormatOptions("/api/v1/mbeans/x", null, false, 60, 404));
+        assertTrue(html.contains("<div class=\"alert\" role=\"alert\"><strong>404 Not Found</strong>"
+                + "<span>No MBean registered as &lt;x:type=y&gt;</span></div>"), html);
+        assertFalse(html.contains("<table"), "the plain error body needs no table");
+
+        String ok = FORMATS.byId("html").toString(error, new FormatOptions("/x", null, false, 60));
+        assertFalse(ok.contains("class=\"alert\""), "status 200 shows no banner");
+        // a non-standard body with an error status keeps its table below the banner
+        String bulk = FORMATS.byId("html").toString(mapOf("status", 500L, "error", "x", "detail", "y"),
+                new FormatOptions("/x", null, false, 60, 500));
+        assertTrue(bulk.contains("500 Internal Server Error") && bulk.contains("<table"));
+    }
+
+    @Test
     void csvNeutralisesFormulasAndQuotes() {
         List<Object> items = List.of(
                 mapOf("name", "=HYPERLINK(\"http://evil\",\"x\")", "value", -5L),

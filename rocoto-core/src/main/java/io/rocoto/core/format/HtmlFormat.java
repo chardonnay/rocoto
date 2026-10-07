@@ -36,6 +36,24 @@ final class HtmlFormat implements DocumentFormat {
             }
             out.append("</head>\n<body>\n<header><span class=\"brand\">Rocoto</span></header>\n<main>\n")
                     .append("<h1>").append(escape(options.title())).append("</h1>\n");
+            if (options.status() >= 400) {
+                Object message = tree instanceof Map<?, ?> m ? m.get("error") : null;
+                out.append("<div class=\"alert\" role=\"alert\"><strong>").append(String.valueOf(options.status()));
+                String reason = reason(options.status());
+                if (reason != null) {
+                    out.append(" ").append(reason);
+                }
+                out.append("</strong>");
+                if (message != null) {
+                    out.append("<span>").append(escape(String.valueOf(message))).append("</span>");
+                }
+                out.append("</div>\n");
+                if (isPlainError(tree)) {
+                    // The banner says it all; a table repeating status and message adds nothing.
+                    out.append("</main>\n</body>\n</html>\n");
+                    return;
+                }
+            }
             if (!table.meta().isEmpty()) {
                 out.append("<dl class=\"meta\">\n");
                 for (Map.Entry<String, Object> e : table.meta().entrySet()) {
@@ -71,6 +89,28 @@ final class HtmlFormat implements DocumentFormat {
         } catch (IOException e) {
             throw FormatException.wrap(e);
         }
+    }
+
+    /** The standard error body {@code {"status": ..., "error": ...}} and nothing else. */
+    private static boolean isPlainError(Object tree) {
+        return tree instanceof Map<?, ?> m && m.size() == 2 && m.containsKey("status") && m.containsKey("error");
+    }
+
+    private static String reason(int status) {
+        return switch (status) {
+            case 400 -> "Bad Request";
+            case 401 -> "Unauthorized";
+            case 403 -> "Forbidden";
+            case 404 -> "Not Found";
+            case 405 -> "Method Not Allowed";
+            case 406 -> "Not Acceptable";
+            case 413 -> "Content Too Large";
+            case 415 -> "Unsupported Media Type";
+            case 429 -> "Too Many Requests";
+            case 500 -> "Internal Server Error";
+            case 503 -> "Service Unavailable";
+            default -> null;
+        };
     }
 
     private static void value(Appendable out, Object v, int depth) throws IOException {

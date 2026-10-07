@@ -111,6 +111,9 @@ class OutputFormatsIT {
         assertEquals(404, notFound.statusCode());
         assertTrue(contentType(notFound).startsWith("application/xml"));
         assertTrue(notFound.body().contains("<status type=\"number\">404</status>"), notFound.body());
+        HttpResponse<String> html = server.get("/api/v1/mbeans/java.lang%3Atype%3DNope?format=html", reader);
+        assertEquals(404, html.statusCode());
+        assertTrue(html.body().contains("<strong>404 Not Found</strong>"), html.body());
     }
 
     @Test
