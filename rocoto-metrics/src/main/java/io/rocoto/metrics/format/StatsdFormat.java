@@ -93,7 +93,8 @@ public final class StatsdFormat implements MetricFormat {
         StringBuilder sb = new StringBuilder();
         labels.forEach((k, v) -> {
             if (!v.isEmpty()) {
-                sb.append(sb.length() == 0 ? "|#" : ",").append(Names.segment(k)).append(':').append(Names.segment(v));
+                sb.append(sb.length() == 0 ? "|#" : ",").append(Names.segment(k)).append(':')
+                        .append(Names.tagValue(v, ",|#"));
             }
         });
         return sb.toString();

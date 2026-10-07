@@ -64,7 +64,8 @@ class MetricFormatsTest {
 
         String tagged = new GraphiteFormat("", true).toString(families(), NOW);
         assertTrue(tagged.contains("jvm_gc_collections_total;gc=G1_Young_Generation 42 1759000000\n"), tagged);
-        assertTrue(tagged.contains("odd;pool=a_b_c_d_x -3 "), tagged);
+        assertTrue(tagged.contains("odd;pool=a,b=c_d_x -3 "), tagged);
+        assertEquals(4, tagged.lines().count(), "a newline in a label value cannot start a new line");
     }
 
     @Test
@@ -82,6 +83,9 @@ class MetricFormatsTest {
         MetricFamily gc = new MetricFamily("jvm_gc_collections_total", MetricRule.Type.COUNTER, "GCs");
         gc.addSample(labels("gc", "G1 Young Generation"), 50);
         assertEquals(List.of("rocoto.jvm_gc_collections_total:8|c|#gc:G1_Young_Generation"), push.lines(List.of(gc)));
+        MetricFamily cpu = new MetricFamily("cpu", MetricRule.Type.GAUGE, "cpu");
+        cpu.addSample(labels("pool", "CodeHeap 'non-nmethods'"), 0.042874999999999996);
+        assertEquals(List.of("rocoto.cpu:0.042875|g|#pool:CodeHeap_'non-nmethods'"), push.lines(List.of(cpu)));
         MetricFamily reset = new MetricFamily("jvm_gc_collections_total", MetricRule.Type.COUNTER, "GCs");
         reset.addSample(labels("gc", "G1 Young Generation"), 3);
         assertEquals(List.of("rocoto.jvm_gc_collections_total:3|c|#gc:G1_Young_Generation"), push.lines(List.of(reset)),

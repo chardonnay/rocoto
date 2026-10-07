@@ -39,11 +39,27 @@ final class Names {
         return sb.toString();
     }
 
-    /** Numbers as the line protocols expect them: no exponent for whole numbers, never NaN. */
+    /**
+     * A tag value: only the characters that would break the line are replaced ({@code forbidden}
+     * plus whitespace), everything else is kept.
+     */
+    static String tagValue(String s, String forbidden) {
+        StringBuilder sb = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            sb.append(Character.isWhitespace(c) || Character.isISOControl(c) || forbidden.indexOf(c) >= 0 ? '_' : c);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Numbers as the line protocols expect them: whole numbers without exponent or fraction, other
+     * values rounded to 12 significant digits (no {@code 0.042874999999999996}).
+     */
     static String number(double v) {
         if (v == Math.rint(v) && Math.abs(v) < 1e15) {
             return Long.toString((long) v);
         }
-        return Double.toString(v);
+        return new java.math.BigDecimal(v).round(new java.math.MathContext(12)).stripTrailingZeros().toString();
     }
 }

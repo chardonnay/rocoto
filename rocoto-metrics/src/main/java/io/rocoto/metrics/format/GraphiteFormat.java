@@ -57,7 +57,7 @@ public final class GraphiteFormat implements MetricFormat {
         StringBuilder sb = new StringBuilder(Names.prefix(prefix)).append(Names.segment(metric));
         labels.forEach((k, v) -> {
             if (!v.isEmpty()) {
-                sb.append(';').append(Names.segment(k)).append('=').append(Names.segment(v));
+                sb.append(';').append(Names.segment(k)).append('=').append(Names.tagValue(v, ";~"));
             }
         });
         return sb.toString();
