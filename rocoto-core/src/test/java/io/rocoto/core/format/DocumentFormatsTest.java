@@ -149,10 +149,10 @@ class DocumentFormatsTest {
     @Test
     void csvNeutralisesFormulasAndQuotes() {
         List<Object> items = List.of(
-                Map.of("name", "=HYPERLINK(\"http://evil\",\"x\")", "value", -5L),
-                Map.of("name", "a,b", "value", 1L),
-                Map.of("name", "+1", "value", 2L),
-                Map.of("name", "@SUM(A1)", "value", 3L));
+                mapOf("name", "=HYPERLINK(\"http://evil\",\"x\")", "value", -5L),
+                mapOf("name", "a,b", "value", 1L),
+                mapOf("name", "+1", "value", 2L),
+                mapOf("name", "@SUM(A1)", "value", 3L));
         String csv = render("csv", Map.of("items", items));
         String[] lines = csv.split("\r\n");
         assertEquals("name,value", lines[0]);
@@ -206,6 +206,13 @@ class DocumentFormatsTest {
         // search result: list of strings -> one column
         Table search = Table.of(Map.of("pattern", "*:*", "mbeans", List.of("a:b=c")));
         assertEquals(List.of("mbeans"), search.columns());
+        // empty result list: still a valid table with one column
+        Table empty = Table.of(Map.of("kind", "threadpools", "items", List.of()));
+        assertEquals(List.of("items"), empty.columns());
+        assertTrue(render("table", Map.of("kind", "x", "items", List.of())).contains("(no rows)"));
+        // multi-attribute read: nested values become their own rows
+        Table multi = Table.of(Map.of("mbean", "m", "values", Map.of("Heap", Map.of("used", 1L), "Verbose", true)));
+        assertTrue(multi.rows().stream().anyMatch(r -> r.get(0).equals("Heap.used")), multi.toString());
         // everything else: flattened name/value pairs
         Table server = Table.of(Map.of("rocoto", Map.of("version", "1"), "caller", Map.of("name", "ada")));
         assertTrue(server.isKeyValue());

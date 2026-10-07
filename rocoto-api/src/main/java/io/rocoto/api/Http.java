@@ -15,6 +15,9 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import io.rocoto.core.convert.ConversionException;
+import io.rocoto.core.format.DocumentFormat;
+import io.rocoto.core.format.DocumentFormats;
+import io.rocoto.core.format.FormatOptions;
 import io.rocoto.core.jmx.MBeanAccessException;
 import io.rocoto.core.json.JsonException;
 import io.rocoto.core.json.JsonParser;
@@ -128,6 +131,90 @@ public final class Http {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         JsonWriter.write(body, response.getWriter());
+    }
+
+    // ---- output formats ------------------------------------------------------------------
+
+    /** CSP for HTML pages: no scripts, no inline code, only Rocoto's own stylesheet. */
+    public static final String HTML_CSP =
+            "default-src 'none'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+
+    /**
+     * The output format the client asked for: {@code ?format=} first, then {@code Accept}, else JSON.
+     * Called before any work is done, so an unsupported format never executes an operation.
+     *
+     * @throws ApiException 406 if {@code format} names an unknown or disabled format
+     */
+    public static DocumentFormat format(HttpServletRequest request) {
+        DocumentFormats formats = formats(request);
+        String requested = request.getParameter("format");
+        if (requested != null) {
+            DocumentFormat f = formats.byId(requested);
+            if (f == null) {
+                throw new ApiException(HttpServletResponse.SC_NOT_ACCEPTABLE,
+                        "Unsupported format '" + requested + "'; available: " + formats.ids());
+            }
+            return f;
+        }
+        return formats.negotiate(request.getHeader("Accept"));
+    }
+
+    private static DocumentFormats formats(HttpServletRequest request) {
+        Object runtime = request.getServletContext().getAttribute(RocotoRuntime.CONTEXT_ATTRIBUTE);
+        return runtime instanceof RocotoRuntime r ? r.formats() : JSON_ONLY;
+    }
+
+    private static final DocumentFormats JSON_ONLY = DocumentFormats.of(java.util.List.of());
+
+    /** Writes a response tree in the negotiated format; falls back to JSON if the format is invalid. */
+    public static void write(HttpServletRequest request, HttpServletResponse response, int status, Object body)
+            throws IOException {
+        DocumentFormat format;
+        try {
+            format = format(request);
+        } catch (ApiException e) {
+            format = JSON_ONLY.json();
+        }
+        response.setStatus(status);
+        response.setContentType(format.contentType());
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Vary", "Accept");
+        if (format.id().equals("html")) {
+            response.setHeader("Content-Security-Policy", HTML_CSP);
+        }
+        format.write(body, options(request), response.getWriter());
+    }
+
+    private static FormatOptions options(HttpServletRequest request) {
+        String context = request.getContextPath() == null ? "" : request.getContextPath();
+        String uri = request.getRequestURI();
+        String title = uri.startsWith(context) ? uri.substring(context.length()) : uri;
+        try {
+            title = URLDecoder.decode(title.replace("+", "%2B"), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            // keep the raw path
+        }
+        int width = FormatOptions.DEFAULT.maxColumnWidth();
+        String w = request.getParameter("width");
+        if (w != null) {
+            try {
+                width = Math.min(500, Integer.parseInt(w.trim()));
+            } catch (NumberFormatException e) {
+                // keep the default
+            }
+        }
+        return new FormatOptions(title.isEmpty() ? "/" : title, context + "/api/v1/style.css",
+                "true".equalsIgnoreCase(request.getParameter("ascii")), width);
+    }
+
+    /** Like {@link #writeError(HttpServletResponse, Throwable)}, in the client's format. */
+    public static void writeError(HttpServletRequest request, HttpServletResponse response, Throwable t)
+            throws IOException {
+        if (!response.isCommitted()) {
+            int status = statusOf(t);
+            response.resetBuffer();
+            write(request, response, status, error(status, messageOf(t)));
+        }
     }
 
     public static Map<String, Object> error(int status, String message) {

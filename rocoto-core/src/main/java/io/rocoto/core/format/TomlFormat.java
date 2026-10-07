@@ -64,7 +64,10 @@ final class TomlFormat implements DocumentFormat {
             List<String> child = new ArrayList<>(path);
             child.add(String.valueOf(e.getKey()));
             if (e.getValue() instanceof Map<?, ?> m) {
-                out.append('\n').append('[').append(header(child)).append("]\n");
+                // A table that only holds sub-tables needs no header of its own (TOML defines it implicitly).
+                if (m.isEmpty() || hasPlainKeys(m)) {
+                    out.append('\n').append('[').append(header(child)).append("]\n");
+                }
                 table(out, child, m, false);
             } else {
                 for (Object element : (List<?>) e.getValue()) {
@@ -73,6 +76,10 @@ final class TomlFormat implements DocumentFormat {
                 }
             }
         }
+    }
+
+    private static boolean hasPlainKeys(Map<?, ?> m) {
+        return m.values().stream().anyMatch(v -> v != null && !(v instanceof Map) && !isArrayOfTables(v));
     }
 
     private static boolean isArrayOfTables(Object v) {

@@ -37,6 +37,7 @@ public final class RocotoRuntime implements AutoCloseable {
     private final MetricsCollector metrics;
     private final OtlpExporter otlp;
     private final SubscriptionManager subscriptions;
+    private final io.rocoto.core.format.DocumentFormats formats;
     private final TlsSelfProbe tlsProbe;
     private final String version;
 
@@ -60,6 +61,12 @@ public final class RocotoRuntime implements AutoCloseable {
         this.subscriptions = new SubscriptionManager(pipeline, config.sub("stream"), security::stillValid);
         this.tlsProbe = TlsSelfProbe.start(config.sub("tls.selfProbe"));
         Operations.maxPatternMBeans = config.integer("api.maxPatternMBeans", 1000);
+        try {
+            this.formats = io.rocoto.core.format.DocumentFormats.of(config.has("api.formats")
+                    ? config.strings("api.formats") : io.rocoto.core.format.DocumentFormats.ALL);
+        } catch (IllegalArgumentException e) {
+            throw new io.rocoto.core.config.ConfigException("api.formats: " + e.getMessage());
+        }
     }
 
     /** Builds the runtime. Any configuration error aborts start-up: Rocoto fails closed. */
@@ -74,6 +81,11 @@ public final class RocotoRuntime implements AutoCloseable {
     /** For components without access to the servlet context (WebSocket endpoints). */
     public static RocotoRuntime current() {
         return current;
+    }
+
+    /** Output formats enabled with {@code api.formats}. */
+    public io.rocoto.core.format.DocumentFormats formats() {
+        return formats;
     }
 
     public Config config() {

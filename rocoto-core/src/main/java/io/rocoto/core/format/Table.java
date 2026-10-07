@@ -17,7 +17,8 @@ import java.util.Set;
  *       element; maps contribute their keys as columns, scalars a single column;</li>
  *   <li>one map-valued entry whose values are all maps (a pattern read): one row per key, the key in
  *       column {@code name};</li>
- *   <li>one map-valued entry with other values (a multi-attribute read): rows {@code name, value};</li>
+ *   <li>one map-valued entry with other values (a multi-attribute read): rows {@code name, value},
+ *       nested values flattened into their own rows;</li>
  *   <li>anything else: the flattened tree as rows {@code name, value}.</li>
  * </ol>
  * Cells keep the raw tree node; each format renders nested values in its own way.
@@ -60,7 +61,7 @@ public record Table(Map<String, Object> meta, String caption, List<String> colum
         if (structuredCount == 0) {
             return keyValue(Map.of(), null, map);
         }
-        return keyValue(Map.of(), null, Values.flatten(map));
+        return keyValue(Map.of(), null, map);
     }
 
     public boolean isKeyValue() {
@@ -78,7 +79,7 @@ public record Table(Map<String, Object> meta, String caption, List<String> colum
             }
         }
         String scalarColumn = caption == null ? "value" : caption;
-        if (scalars) {
+        if (scalars || columns.isEmpty()) {
             columns.add(scalarColumn);
         }
         List<String> cols = new ArrayList<>(columns);
@@ -115,9 +116,10 @@ public record Table(Map<String, Object> meta, String caption, List<String> colum
         return new Table(meta, caption, cols, rows);
     }
 
+    /** Name/value rows; nested values are flattened into their own rows ({@code HeapMemoryUsage.used}). */
     private static Table keyValue(Map<String, Object> meta, String caption, Map<?, ?> map) {
         List<List<Object>> rows = new ArrayList<>(map.size());
-        map.forEach((k, v) -> rows.add(java.util.Arrays.asList(String.valueOf(k), v)));
+        Values.flatten(map).forEach((k, v) -> rows.add(java.util.Arrays.asList(k, v)));
         return new Table(meta, caption, List.of("name", "value"), rows);
     }
 }
