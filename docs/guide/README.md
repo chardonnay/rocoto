@@ -13,7 +13,7 @@ how to install it and how to operate it.
 | 03 | [Authentication](03-authentication.md) | `auth.mode`, HTTP Basic, API tokens, mTLS, JWT, container authentication |
 | 04 | [The JMX connection](04-jmx-connection.md) | How Rocoto reaches JMX, server adapters, normalized resources, type fidelity |
 | 05 | [Authorization policy](05-authorization-policy.md) | Roles, rules, built-in deny list, masking, audit log, recipes |
-| 06 | [Metrics](06-metrics.md) | `/metrics` for Prometheus and OpenMetrics, profiles, custom rules, OTLP push |
+| 06 | [Metrics](06-metrics.md) | `/metrics` in Prometheus, OpenMetrics, InfluxDB, Graphite, StatsD and OTLP format, profiles, custom rules, push exporters |
 | 07 | [Streaming](07-streaming.md) | Server-Sent Events and WebSocket subscriptions, thresholds, notifications |
 | 08 | [REST API](08-rest-api.md) | Endpoints of `/api/v1`, request and response formats |
 | 09 | [Jolokia compatibility and migration](09-jolokia-compat-and-migration.md) | The `/jolokia` endpoint, differences, converting a Jolokia policy |
@@ -22,6 +22,7 @@ how to install it and how to operate it.
 | 12 | [Troubleshooting](12-troubleshooting.md) | Status codes, log messages, common mistakes |
 | 13 | [TLS and OCSP](13-tls-and-ocsp.md) | Revocation checking, OCSP stapling, the TLS self probe |
 | 14 | [Keeping up with server releases](14-keeping-up-with-servers.md) | Pinned and floating server versions in CI, what to do when a new server release breaks something, adding a server |
+| 15 | [Output formats](15-output-formats.md) | JSON, XML, YAML, TOML, HTML, CSV, text and table output of the REST API |
 
 ## Reference and examples
 

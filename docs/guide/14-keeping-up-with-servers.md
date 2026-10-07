@@ -65,3 +65,7 @@ pull requests for that, Renovate can update image tags in arbitrary files with a
    configuration directory to `ConfigLoader` if the server has one.
 3. Copy the closest `ci/<server>/smoke-test.sh`, add a job to `ci.yml` and a line to
    `server-compat.yml`, document the server in [02 - Installation](02-installation.md).
+
+## Next
+
+[15 - Output formats](15-output-formats.md)

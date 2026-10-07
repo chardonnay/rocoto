@@ -41,24 +41,25 @@ service:
       exporters: [debug, prometheus]
 ```
 
-The `metrics.otlp` section of `rocoto.yaml` for production - HTTPS endpoint, credentials from the
-environment:
+The `metrics.push.otlp` section of `rocoto.yaml` for production - HTTPS endpoint, credentials
+from the environment:
 
 ```yaml
 metrics:
   enabled: true
   profiles: [jvm, auto]
-  otlp:
-    enabled: true
-    endpoint: https://otel-collector.example.com:4318/v1/metrics
-    intervalSeconds: 60
-    serviceName: orders-tomcat               # resource attribute service.name
-    resourceAttributes:
-      deployment.environment: production
-      host.name: app1.example.com
-    headers:
-      Authorization: "${env:OTLP_AUTH}"      # e.g. "Bearer ..." checked by the collector's auth extension
-    roles: [rocoto-reader]                   # roles of the internal identity "otlp-exporter"
+  push:
+    otlp:
+      enabled: true
+      endpoint: https://otel-collector.example.com:4318/v1/metrics
+      intervalSeconds: 60
+      serviceName: orders-tomcat               # resource attribute service.name
+      resourceAttributes:
+        deployment.environment: production
+        host.name: app1.example.com
+      headers:
+        Authorization: "${env:OTLP_AUTH}"      # e.g. "Bearer ..." checked by the collector's auth extension
+      roles: [rocoto-reader]                   # roles of the internal identity "otlp-exporter"
 
 tls:
   outbound:                                  # applies to the OTLP push (and the JWKS download)
@@ -82,13 +83,14 @@ For a local demo next to the tomcat-builtin compose project - add the service an
 
 ```yaml
 # conf/rocoto.yaml (additional keys below "metrics:") - LOCAL DEMO ONLY - never use in production
-  otlp:
-    enabled: true
-    endpoint: http://otel-collector:4318/v1/metrics
-    allowInsecure: true                      # http:// endpoints are refused without it
-    intervalSeconds: 15
-    serviceName: tomcat-demo
-    resourceAttributes: { deployment.environment: demo }
+  push:
+    otlp:
+      enabled: true
+      endpoint: http://otel-collector:4318/v1/metrics
+      allowInsecure: true                      # http:// endpoints are refused without it
+      intervalSeconds: 15
+      serviceName: tomcat-demo
+      resourceAttributes: { deployment.environment: demo }
 ```
 
 ## Commands
@@ -119,7 +121,7 @@ Value: 157960624.000000
 ```
 
 What Rocoto actually sends was captured with a small HTTP sink instead of a collector
-(`metrics.otlp` as in the demo snippet, embedded Tomcat):
+(`metrics.push.otlp` as in the demo snippet, embedded Tomcat):
 
 ```text
 POST /v1/metrics
@@ -139,7 +141,7 @@ Rocoto's OTLP/HTTP JSON and re-exposes `jvm_*` and `tomcat_*` on port 8889 with
 ## Notes
 
 - The exporter has no HTTP request to take an identity from. It runs as the internal identity
-  `otlp-exporter` with `metrics.otlp.roles` and goes through the same policy and masking as any
+  `otlp-exporter` with `metrics.push.otlp.roles` and goes through the same policy and masking as any
   caller. Remove MBeans from its view with `deny` rules for that role, or give it a role of its own.
 - `headers` values may use `${env:...}`, `${sys:...}` or `${file:...}`; each value must be a
   single reference.
@@ -149,4 +151,4 @@ Rocoto's OTLP/HTTP JSON and re-exposes `jvm_*` and `tomcat_*` on port 8889 with
 ## What to look at next
 
 - [custom-metrics-profile](custom-metrics-profile.md), [prometheus-grafana](prometheus-grafana.md)
-- [Configuration reference](../reference/configuration.md): `metrics.otlp`, `tls.outbound`
+- [Configuration reference](../reference/configuration.md): `metrics.push.otlp`, `tls.outbound`

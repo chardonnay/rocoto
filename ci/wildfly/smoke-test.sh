@@ -85,6 +85,10 @@ check "WildFly metrics" true "$(echo "$METRICS" | grep -c '^wildfly_' >/dev/null
 check "data source pool metrics (statistics=pool uses capitalized attribute names)" true \
   "$(echo "$METRICS" | grep -c '^wildfly_datasource_connections_active{datasource="ExampleDS"}' >/dev/null && echo true || echo false)"
 check "io worker metrics" true "$(echo "$METRICS" | grep -c '^wildfly_io_worker_threads_max' >/dev/null && echo true || echo false)"
+check "metrics as InfluxDB line protocol" true "$(curl -s -H "Authorization: Bearer $TOKEN" "$BASE/metrics?format=influx" \
+  | grep -c '^wildfly_datasource_connections_active,datasource=ExampleDS value=' >/dev/null && echo true || echo false)"
+check "resources as YAML" true "$(curl -s -u "rita:$BUILTIN_PASSWORD" "$BASE/api/v1/resources/datasources?format=yaml" \
+  | grep -c 'name: ExampleDS' >/dev/null && echo true || echo false)"
 check "Jolokia read" 200 "$(curl -s -u "rita:$BUILTIN_PASSWORD" "$BASE/jolokia/read/java.lang:type=Memory/HeapMemoryUsage/used" | jq -r .status)"
 check "Jolokia proxy mode does not exist" 403 "$(curl -s -u "rita:$BUILTIN_PASSWORD" -H 'Content-Type: application/json' \
   -d '{"type":"read","mbean":"java.lang:type=Memory","attribute":"Verbose","target":{"url":"service:jmx:rmi:///jndi/ldap://x/y"}}' "$BASE/jolokia" | jq -r .status)"

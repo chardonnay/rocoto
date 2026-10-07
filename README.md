@@ -32,7 +32,8 @@ curl -u ada https://appserver:8443/rocoto/api/v1/mbeans/java.lang%3Atype%3DMemor
 | Proxy mode (JSR-160 targets chosen by the client) | yes (source of CVE-2018-1000130) | **does not exist** |
 | Users, roles, audit trail | network + MBean restrictions only | **RBAC per MBean / attribute / operation, JSON audit log** |
 | Secrets in attribute values | returned | **masked on the server** |
-| Prometheus / OpenTelemetry | external exporters | **`/metrics` and OTLP push built in** |
+| Prometheus / OpenTelemetry / InfluxDB / Graphite / StatsD | external exporters | **built in: pull from `/metrics` or push** |
+| Output formats | JSON | **JSON, XML, YAML, TOML, HTML, CSV, text and tables** |
 | Push | pull + SSE for notifications | **SSE and WebSocket for attributes and notifications** |
 | API description | none | **OpenAPI 3 + JSON Schema per MBean** |
 | 64-bit numbers | plain JSON numbers (precision loss beyond 2^53 in JS clients) | **type-faithful JSON** (large values as strings) |
@@ -50,12 +51,15 @@ curl -u ada https://appserver:8443/rocoto/api/v1/mbeans/java.lang%3Atype%3DMemor
   - *chain*: both at once.
 - **Policy, masking, audit** – roles per MBean/attribute/operation, secrets replaced by `********`,
   every write, exec, denial and failed login recorded as a JSON line.
-- **Observability** – Prometheus/OpenMetrics endpoint and OTLP/HTTP push with ready-made mapping
-  profiles for the JVM, Tomcat, WildFly and Payara; write your own rules in YAML.
+- **Observability** – `/metrics` in Prometheus, OpenMetrics, InfluxDB line protocol, Graphite,
+  StatsD and OTLP format, and push exporters for OTLP, Graphite, StatsD and InfluxDB; ready-made
+  mapping profiles for the JVM, Tomcat, WildFly and Payara; write your own rules in YAML.
 - **Server adapters** – `GET /api/v1/resources/datasources` looks the same on every server.
 - **Streaming** – subscribe to attributes (on change, thresholds) and JMX notifications over SSE
   or WebSocket; the policy is re-checked on every poll.
 - **REST + OpenAPI** – resource style and RPC style, bulk requests, JSON Schema per MBean.
+- **Output formats** – every API response as JSON, XML, YAML, TOML, HTML, CSV, `name: value` text
+  or an aligned table (`?format=` or `Accept`); a browser gets a readable HTML page.
 - **Jolokia compatible** – `/jolokia` speaks protocol 7.x for the Jolokia clients, hawtio and
   Telegraf, behind the same security pipeline; verified with the unmodified Jolokia Java client.
 - **TLS & OCSP** – recipes to enable OCSP stapling on the server connector, a watchdog that
