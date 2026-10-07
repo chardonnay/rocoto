@@ -74,20 +74,23 @@ layer.
 
 ### 2. Clients
 
-**jolokia-client-java** (`J4pClient`) - the client Rocoto's integration test `JolokiaClientIT` uses:
+**jolokia-client-java** (`JolokiaClient`, `J4pClient` before 2.4) - the client Rocoto's integration test `JolokiaClientIT` uses:
 
 ```java
-J4pClient client = J4pClient.url("https://app.example.com:8443/rocoto/jolokia")
+// jolokia-client-java 2.4 and later; versions up to 2.3 call these classes J4pClient, J4pReadRequest, ...
+JolokiaClient client = new JolokiaClientBuilder()
+        .url("https://app.example.com:8443/rocoto/jolokia")
         .user("monitor")
         .password(System.getenv("ROCOTO_PASSWORD"))
         .connectionTimeout(5000)
         .build();
 
-J4pReadResponse response = client.execute(new J4pReadRequest("java.lang:type=Memory", "HeapMemoryUsage"));
+JolokiaReadResponse response = client.execute(
+        new JolokiaReadRequest("java.lang:type=Memory", "HeapMemoryUsage"));
 Map<String, Long> usage = response.getValue();
 ```
 
-Do not configure a `J4pTargetConfig` (proxy mode).
+Do not configure a `JolokiaTargetConfig` (proxy mode).
 
 **jolokia.js**:
 

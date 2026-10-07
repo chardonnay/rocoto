@@ -7,9 +7,9 @@ what is supported, where Rocoto deliberately differs, and how to migrate.
 
 Compatibility is not only claimed but tested with the real thing: the integration test
 `rocoto-it/src/test/java/io/rocoto/it/JolokiaClientIT.java` drives `/jolokia` with the
-**unmodified jolokia-client-java 2.1.1** (`J4pClient`): `version`, `read` including inner path
+**unmodified jolokia-client-java 2.6.3** (`JolokiaClient`): `version`, `read` including inner path
 and ObjectName patterns, `search`, `list`, bulk requests, `write`, `exec`, and the mapping of
-errors to `J4pRemoteException`. In addition, the WildFly smoke test in CI reads through
+errors to `JolokiaRemoteException`. In addition, the WildFly smoke test in CI reads through
 `/jolokia` and checks that a proxy-mode request is answered with status `403`.
 
 The endpoint is enabled by default. If you do not need it, switch it off:
@@ -31,7 +31,7 @@ Audit records of Jolokia requests carry `"channel":"jolokia"`.
 
 ```mermaid
 flowchart TD
-    JC["Jolokia client<br/>(jolokia.js, J4pClient, Telegraf, hawtio)"] -->|"GET or POST /rocoto/jolokia"| F
+    JC["Jolokia client<br/>(jolokia.js, JolokiaClient, Telegraf, hawtio)"] -->|"GET or POST /rocoto/jolokia"| F
     NC["Native client"] -->|"/rocoto/api/v1"| F
     F["RocotoAuthFilter<br/>headers, Origin check, JSON only, authentication"]
     F -->|"401, 403, 415, 429"| REJ["Rejected before any JMX access"]
@@ -399,23 +399,26 @@ All clients need two changes: the new URL and credentials. The examples use HTTP
 every Jolokia client supports. Use a dedicated user with `rocoto-reader` unless the client has
 to write or execute.
 
-### jolokia-client-java (`J4pClient`)
+### jolokia-client-java (`JolokiaClient`, formerly `J4pClient`)
 
 ```java
-J4pClient client = J4pClient.url("https://app.example.com:8443/rocoto/jolokia")
+// jolokia-client-java 2.4 and later; versions up to 2.3 call these classes J4pClient, J4pReadRequest, ...
+JolokiaClient client = new JolokiaClientBuilder()
+        .url("https://app.example.com:8443/rocoto/jolokia")
         .user("monitor")
         .password(System.getenv("ROCOTO_PASSWORD"))
         .connectionTimeout(5000)
         .build();
 
-J4pReadResponse response = client.execute(
-        new J4pReadRequest("java.lang:type=Memory", "HeapMemoryUsage"));
+JolokiaReadResponse response = client.execute(
+        new JolokiaReadRequest("java.lang:type=Memory", "HeapMemoryUsage"));
 Map<String, Long> usage = response.getValue();
 ```
 
-Do not configure a `J4pTargetConfig` (proxy mode); such requests are answered with status `403`.
+Do not configure a `JolokiaTargetConfig` (`J4pTargetConfig` before 2.4, proxy mode); such
+requests are answered with status `403`.
 The client sends simple `exec` and `write` requests as GET; that works as long as
-`compat.jolokia.allowGetMutations` is `true` (the default). This client, in version 2.1.1, is the
+`compat.jolokia.allowGetMutations` is `true` (the default). This client, in version 2.6.3, is the
 one the integration test `JolokiaClientIT` uses.
 
 ### jolokia.js

@@ -10,16 +10,17 @@ import java.util.Map;
 
 import javax.management.ObjectName;
 
-import org.jolokia.client.J4pClient;
-import org.jolokia.client.exception.J4pRemoteException;
-import org.jolokia.client.request.J4pExecRequest;
-import org.jolokia.client.request.J4pListRequest;
-import org.jolokia.client.request.J4pReadRequest;
-import org.jolokia.client.request.J4pReadResponse;
-import org.jolokia.client.request.J4pSearchRequest;
-import org.jolokia.client.request.J4pVersionRequest;
-import org.jolokia.client.request.J4pVersionResponse;
-import org.jolokia.client.request.J4pWriteRequest;
+import org.jolokia.client.JolokiaClient;
+import org.jolokia.client.JolokiaClientBuilder;
+import org.jolokia.client.exception.JolokiaRemoteException;
+import org.jolokia.client.request.JolokiaExecRequest;
+import org.jolokia.client.request.JolokiaListRequest;
+import org.jolokia.client.request.JolokiaReadRequest;
+import org.jolokia.client.response.JolokiaReadResponse;
+import org.jolokia.client.request.JolokiaSearchRequest;
+import org.jolokia.client.request.JolokiaVersionRequest;
+import org.jolokia.client.response.JolokiaVersionResponse;
+import org.jolokia.client.request.JolokiaWriteRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,42 +54,47 @@ class JolokiaClientIT {
         server.close();
     }
 
-    private static J4pClient client(String user) {
-        return J4pClient.url(server.uri("/jolokia").toString()).user(user).password(TestServer.PASSWORD).build();
+    private static JolokiaClient client(String user) {
+        return new JolokiaClientBuilder().url(server.uri("/jolokia").toString()).user(user).password(TestServer.PASSWORD).build();
     }
 
     @Test
     void versionReadSearchAndList() throws Exception {
-        J4pClient reader = client(TestServer.READER);
+        JolokiaClient reader = client(TestServer.READER);
 
-        J4pVersionResponse version = reader.execute(new J4pVersionRequest());
+        JolokiaVersionResponse version = reader.execute(new JolokiaVersionRequest());
         assertEquals("7.2", version.getProtocolVersion());
         assertTrue(version.getAgentVersion().startsWith("rocoto-"));
 
-        J4pReadResponse heap = reader.execute(new J4pReadRequest("java.lang:type=Memory", "HeapMemoryUsage"));
+        JolokiaReadResponse heap = reader.execute(new JolokiaReadRequest("java.lang:type=Memory", "HeapMemoryUsage"));
         Map<String, Object> usage = heap.getValue();
         assertTrue(((Number) usage.get("used")).longValue() > 0);
 
-        J4pReadRequest inner = new J4pReadRequest("java.lang:type=Memory", "HeapMemoryUsage");
+        JolokiaReadRequest inner = new JolokiaReadRequest("java.lang:type=Memory", "HeapMemoryUsage");
         inner.setPath("used");
         assertTrue(((Number) reader.execute(inner).getValue()).longValue() > 0);
 
-        J4pReadResponse pools = reader.execute(new J4pReadRequest("java.lang:type=MemoryPool,*", "Name"));
+        JolokiaReadResponse pools = reader.execute(new JolokiaReadRequest("java.lang:type=MemoryPool,*", "Name"));
         assertTrue(pools.getObjectNames().size() > 1);
 
-        org.jolokia.client.request.J4pSearchResponse search = reader.execute(new J4pSearchRequest("java.lang:type=Mem*"));
-        List<String> names = search.getMBeanNames();
+        org.jolokia.client.response.JolokiaSearchResponse search = reader.execute(new JolokiaSearchRequest("java.lang:type=Mem*"));
+        List<Object> names = search.getMBeanNames();
         assertTrue(names.contains("java.lang:type=Memory"));
 
-        Map<String, Object> list = reader.execute(new J4pListRequest("java.lang/type=Memory")).getValue();
-        assertNotNull(list.get("attr"));
+        org.jolokia.client.response.JolokiaListResponse listResponse =
+                reader.execute(new JolokiaListRequest("java.lang/type=Memory"));
+        // Rocoto answers relative to the path (checked over raw HTTP in BuiltinAuthIT); client 2.4+
+        // places the answer under domain and key properties again, so it must arrive complete.
+        Map<?, ?> tree = listResponse.getValue();
+        assertNotNull(((Map<?, ?>) ((Map<?, ?>) tree.get("java.lang")).get("type=Memory")).get("attr"));
+        assertNotNull(listResponse.getMBeanInfo(new ObjectName("java.lang:type=Memory")));
     }
 
     @Test
     void bulkRequests() throws Exception {
-        List<J4pReadResponse> responses = client(TestServer.READER).execute(
-                new J4pReadRequest("java.lang:type=Threading", "ThreadCount"),
-                new J4pReadRequest("java.lang:type=Runtime", "VmName"));
+        List<JolokiaReadResponse> responses = client(TestServer.READER).execute(
+                new JolokiaReadRequest("java.lang:type=Threading", "ThreadCount"),
+                new JolokiaReadRequest("java.lang:type=Runtime", "VmName"));
         assertEquals(2, responses.size());
         assertNotNull(responses.get(1).getValue());
     }
@@ -96,21 +102,21 @@ class JolokiaClientIT {
     @Test
     void writeAndExecFollowThePolicy() throws Exception {
         ObjectName memory = new ObjectName("java.lang:type=Memory");
-        J4pRemoteException denied = assertThrows(J4pRemoteException.class,
-                () -> client(TestServer.READER).execute(new J4pExecRequest(memory, "gc")));
+        JolokiaRemoteException denied = assertThrows(JolokiaRemoteException.class,
+                () -> client(TestServer.READER).execute(new JolokiaExecRequest(memory, "gc")));
         assertEquals(403, denied.getStatus());
 
-        J4pClient admin = client(TestServer.ADMIN);
-        admin.execute(new J4pExecRequest(memory, "gc"));
-        Object previous = admin.execute(new J4pWriteRequest(memory, "Verbose", true)).getValue();
+        JolokiaClient admin = client(TestServer.ADMIN);
+        admin.execute(new JolokiaExecRequest(memory, "gc"));
+        Object previous = admin.execute(new JolokiaWriteRequest(memory, "Verbose", true)).getValue();
         assertEquals(Boolean.FALSE, previous);
-        admin.execute(new J4pWriteRequest(memory, "Verbose", false));
+        admin.execute(new JolokiaWriteRequest(memory, "Verbose", false));
     }
 
     @Test
     void errorsArriveAsJolokiaExceptions() {
-        J4pRemoteException missing = assertThrows(J4pRemoteException.class,
-                () -> client(TestServer.READER).execute(new J4pReadRequest("java.lang:type=Nope", "X")));
+        JolokiaRemoteException missing = assertThrows(JolokiaRemoteException.class,
+                () -> client(TestServer.READER).execute(new JolokiaReadRequest("java.lang:type=Nope", "X")));
         assertEquals(404, missing.getStatus());
         assertEquals("javax.management.InstanceNotFoundException", missing.getErrorType());
     }
