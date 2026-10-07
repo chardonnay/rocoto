@@ -36,8 +36,9 @@ esac
 # OCSP stapling as seen by a TLS client
 host_port="${ROCOTO_URL#https://}"
 host_port="${host_port%%/*}"
-if echo | openssl s_client -connect "$host_port" -status -CAfile "$CERTS/ca.crt" 2>/dev/null \
-    | grep -q "OCSP Response Status: successful"; then
+# capture first: with pipefail, grep -q ending early could make openssl die of SIGPIPE
+handshake="$(echo | openssl s_client -connect "$host_port" -status -CAfile "$CERTS/ca.crt" 2>/dev/null || true)"
+if grep -q "OCSP Response Status: successful" <<< "$handshake"; then
   echo "ok         the server staples an OCSP response"
 else
   echo "FAIL       no stapled OCSP response"; failures=$((failures + 1))
