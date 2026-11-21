@@ -65,4 +65,14 @@ class JsonTest {
         String deep = "[".repeat(100) + "]".repeat(100);
         assertThrows(JsonException.class, () -> JsonParser.parse(deep));
     }
+
+    @Test
+    void rejectsNonJsonDigitsAndUnrepresentableDecimals() {
+        for (String bad : List.of("1٢", "-２", "1.２", "1e２", "\"\\u+041\"", "\"\\u１２３４\"",
+                "1e2147483649", "0.01e-2147483647")) {
+            assertThrows(JsonException.class, () -> JsonParser.parse(bad), bad);
+        }
+        assertEquals("«", JsonParser.parse("\"\\u00aB\""));
+        assertEquals("２", JsonParser.parse("\"２\""));
+    }
 }

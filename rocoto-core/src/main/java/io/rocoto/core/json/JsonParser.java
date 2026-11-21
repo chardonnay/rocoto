@@ -3,6 +3,7 @@ package io.rocoto.core.json;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public final class JsonParser {
             case 'f' -> readLiteral("false", Boolean.FALSE);
             case 'n' -> readLiteral("null", null);
             default -> {
-                if (c == '-' || (c >= '0' && c <= '9')) {
+                if (c == '-' || isDigit(c)) {
                     yield readNumber();
                 }
                 throw error("Unexpected character '" + c + "'");
@@ -161,8 +162,8 @@ public final class JsonParser {
                         throw error("Incomplete unicode escape");
                     }
                     try {
-                        sb.append((char) Integer.parseInt(src.substring(pos, pos + 4), 16));
-                    } catch (NumberFormatException ex) {
+                        sb.append((char) HexFormat.fromHexDigits(src, pos, pos + 4));
+                    } catch (IllegalArgumentException ex) {
                         throw error("Invalid unicode escape");
                     }
                     pos += 4;
@@ -186,9 +187,7 @@ public final class JsonParser {
             pos++;
         }
         int digitsStart = pos;
-        while (pos < src.length() && Character.isDigit(src.charAt(pos))) {
-            pos++;
-        }
+        skipDigits();
         if (pos == digitsStart) {
             throw error("Invalid number");
         }
@@ -200,9 +199,7 @@ public final class JsonParser {
             decimal = true;
             pos++;
             int f = pos;
-            while (pos < src.length() && Character.isDigit(src.charAt(pos))) {
-                pos++;
-            }
+            skipDigits();
             if (pos == f) {
                 throw error("Invalid number");
             }
@@ -214,24 +211,36 @@ public final class JsonParser {
                 pos++;
             }
             int e = pos;
-            while (pos < src.length() && Character.isDigit(src.charAt(pos))) {
-                pos++;
-            }
+            skipDigits();
             if (pos == e) {
                 throw error("Invalid number");
             }
         }
-        String text = src.substring(start, pos);
-        if (text.length() > 512) {
+        if (pos - start > 512) {
             throw error("Number too long");
         }
+        String text = src.substring(start, pos);
         if (decimal) {
-            return new BigDecimal(text);
+            try {
+                return new BigDecimal(text);
+            } catch (NumberFormatException e) {
+                throw error("Decimal exponent out of range");
+            }
         }
         try {
             return Long.parseLong(text);
         } catch (NumberFormatException e) {
             return new BigInteger(text);
+        }
+    }
+
+    private static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private void skipDigits() {
+        while (pos < src.length() && isDigit(src.charAt(pos))) {
+            pos++;
         }
     }
 
