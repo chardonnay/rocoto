@@ -35,6 +35,12 @@ keys or API details; such changes are listed under "Changed".
 
 ### Fixed
 
+- Metric scrapes reuse MBean discovery results within a request and honor masking for individual
+  keys of composite attributes.
+- StatsD tracks counters by metric and labels and drops baselines for series absent from the latest
+  collection. UDP packet assembly encodes each line once.
+- The JSON parser rejects non-ASCII digits in numbers and escapes. Decimal exponents outside the
+  supported range return HTTP 400.
 - The Undertow all-jar no longer contains unrelocated multi-release copies of wildfly-common
   (and, with Undertow 2.4, jboss-threads) classes, which could shadow the application's own
   classes when the jar is used as a Java agent.
