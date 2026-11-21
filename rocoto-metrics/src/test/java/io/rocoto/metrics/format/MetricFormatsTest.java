@@ -83,13 +83,40 @@ class MetricFormatsTest {
         MetricFamily gc = new MetricFamily("jvm_gc_collections_total", MetricRule.Type.COUNTER, "GCs");
         gc.addSample(labels("gc", "G1 Young Generation"), 50);
         assertEquals(List.of("rocoto.jvm_gc_collections_total:8|c|#gc:G1_Young_Generation"), push.lines(List.of(gc)));
-        MetricFamily cpu = new MetricFamily("cpu", MetricRule.Type.GAUGE, "cpu");
-        cpu.addSample(labels("pool", "CodeHeap 'non-nmethods'"), 0.042874999999999996);
-        assertEquals(List.of("rocoto.cpu:0.042875|g|#pool:CodeHeap_'non-nmethods'"), push.lines(List.of(cpu)));
         MetricFamily reset = new MetricFamily("jvm_gc_collections_total", MetricRule.Type.COUNTER, "GCs");
         reset.addSample(labels("gc", "G1 Young Generation"), 3);
         assertEquals(List.of("rocoto.jvm_gc_collections_total:3|c|#gc:G1_Young_Generation"), push.lines(List.of(reset)),
                 "a smaller value is a counter reset");
+        MetricFamily cpu = new MetricFamily("cpu", MetricRule.Type.GAUGE, "cpu");
+        cpu.addSample(labels("pool", "CodeHeap 'non-nmethods'"), 0.042874999999999996);
+        assertEquals(List.of("rocoto.cpu:0.042875|g|#pool:CodeHeap_'non-nmethods'"), push.lines(List.of(cpu)));
+    }
+
+    @Test
+    void counterIdentityUsesLabelPairsAndIgnoresTheirOrder() {
+        StatsdFormat push = new StatsdFormat("", true, true);
+        MetricFamily first = new MetricFamily("jobs_total", MetricRule.Type.COUNTER, "Jobs");
+        first.addSample(labels("app", "one, zone=east"), 100);
+        first.addSample(labels("app", "one", "zone", "east"), 20);
+        assertEquals(List.of(), push.lines(List.of(first)));
+
+        MetricFamily next = new MetricFamily("jobs_total", MetricRule.Type.COUNTER, "Jobs");
+        next.addSample(labels("zone", "east", "app", "one"), 23);
+        next.addSample(labels("app", "one, zone=east"), 105);
+        assertEquals(List.of("jobs_total:3|c|#zone:east,app:one", "jobs_total:5|c|#app:one__zone=east"),
+                push.lines(List.of(next)));
+    }
+
+    @Test
+    void reappearingCounterStartsWithAFreshBaseline() {
+        StatsdFormat push = new StatsdFormat("", true, true);
+        MetricFamily first = new MetricFamily("jobs_total", MetricRule.Type.COUNTER, "Jobs");
+        first.addSample(labels("pool", "workers"), 20);
+        assertEquals(List.of(), push.lines(List.of(first)));
+        assertEquals(List.of(), push.lines(List.of()));
+        MetricFamily replacement = new MetricFamily("jobs_total", MetricRule.Type.COUNTER, "Jobs");
+        replacement.addSample(labels("pool", "workers"), 500);
+        assertEquals(List.of(), push.lines(List.of(replacement)));
     }
 
     @Test

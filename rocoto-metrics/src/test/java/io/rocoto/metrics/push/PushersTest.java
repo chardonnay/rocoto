@@ -14,6 +14,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -122,6 +123,27 @@ class PushersTest {
             assertTrue(r[2].contains("jvm_threads_current value="), r[2]);
         } finally {
             server.stop(0);
+        }
+    }
+
+    @Test
+    void statsdPacketBoundaryCountsUtf8Bytes() throws Exception {
+        try (DatagramSocket server = new DatagramSocket(0, InetAddress.getByName("127.0.0.1"))) {
+            server.setSoTimeout(3_000);
+            Config config = ConfigLoader.parse("host: 127.0.0.1\nport: " + server.getLocalPort()
+                    + "\nprefix: ''\ntags: true\nmaxPacketBytes: 256");
+            MetricFamily gauge = new MetricFamily("x", MetricRule.Type.GAUGE, "test");
+            String label = "é".repeat(123);  // 246 bytes + 10 bytes for x:1|g|#id:
+            gauge.addSample(Map.of("id", label + "a"), 1);
+            gauge.addSample(Map.of("id", label), 1);
+            gauge.addSample(Map.of("id", "a"), 2);
+            gauge.addSample(Map.of("id", "b"), 3);
+            new StatsdPusher(config, collector, pipeline, null).push(List.of(gauge), 0);
+            for (String expected : List.of("x:1|g|#id:" + label, "x:2|g|#id:a\nx:3|g|#id:b")) {
+                DatagramPacket packet = new DatagramPacket(new byte[512], 512);
+                server.receive(packet);
+                assertEquals(expected, new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8));
+            }
         }
     }
 
