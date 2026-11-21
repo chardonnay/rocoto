@@ -22,7 +22,7 @@ spec:
         fsGroup: 0
       containers:
         - name: tomcat
-          image: registry.example.com/rocoto-tomcat:0.1.0   # built from ../image/Dockerfile
+          image: registry.example.com/rocoto-tomcat:0.1.1   # built from ../image/Dockerfile
           ports:
             - name: https
               containerPort: 8443

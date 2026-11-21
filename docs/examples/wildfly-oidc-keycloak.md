@@ -301,7 +301,7 @@ make down
 ## Expected output
 
 ```text
-{"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{"adapter":"wildfly",...},
+{"rocoto":{"version":"0.1.1","authMode":"builtin"},"server":{"adapter":"wildfly",...},
  "caller":{"name":"kate","roles":["default-roles-rocoto-demo","offline_access","rocoto-admin","uma_authorization"],"authenticatedBy":"jwt"}}
 ```
 

@@ -54,7 +54,7 @@ The image:
 # of the image - they are mounted from a ConfigMap and Secrets (see ../manifests).
 #
 # Build from the repository root so that the WAR is inside the build context:
-#   docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.0 .
+#   docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.1 .
 FROM tomcat:10.1-jdk17
 
 COPY examples/kubernetes/image/server.xml /usr/local/tomcat/conf/server.xml
@@ -243,7 +243,7 @@ spec:
         fsGroup: 0
       containers:
         - name: tomcat
-          image: registry.example.com/rocoto-tomcat:0.1.0   # built from ../image/Dockerfile
+          image: registry.example.com/rocoto-tomcat:0.1.1   # built from ../image/Dockerfile
           ports:
             - name: https
               containerPort: 8443
@@ -352,8 +352,8 @@ spec:
 
 ```sh
 # image (from the repository root)
-docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.0 .
-docker push registry.example.com/rocoto-tomcat:0.1.0
+docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.1 .
+docker push registry.example.com/rocoto-tomcat:0.1.1
 
 cd examples/kubernetes
 kubectl apply -f manifests/00-namespace.yaml
@@ -386,11 +386,11 @@ curl -s --cacert tls.crt https://localhost:8443/rocoto/api/v1/health/live
 # {"status":"UP"}
 
 curl -s --cacert tls.crt -u ada:demo-password-123 https://localhost:8443/rocoto/api/v1/server
-# {"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{"adapter":"tomcat",...},
+# {"rocoto":{"version":"0.1.1","authMode":"builtin"},"server":{"adapter":"tomcat",...},
 #  "caller":{"name":"ada","roles":["rocoto-admin"],"authenticatedBy":"basic"}}
 
 curl -s --cacert tls.crt -u ada:demo-password-123 https://localhost:8443/rocoto/api/v1/health
-# {"status":"UP","version":"0.1.0","adapter":"tomcat","visibleMBeans":...,"activeSubscriptions":0,"warnings":[]}
+# {"status":"UP","version":"0.1.1","adapter":"tomcat","visibleMBeans":...,"activeSubscriptions":0,"warnings":[]}
 ```
 
 In Prometheus the target `serviceMonitor/rocoto-demo/rocoto-demo/0` is `UP`.

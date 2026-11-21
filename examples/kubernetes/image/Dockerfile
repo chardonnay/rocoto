@@ -2,7 +2,7 @@
 # of the image - they are mounted from a ConfigMap and Secrets (see ../manifests).
 #
 # Build from the repository root so that the WAR is inside the build context:
-#   docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.0 .
+#   docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.1 .
 FROM tomcat:10.1-jdk17
 
 COPY examples/kubernetes/image/server.xml /usr/local/tomcat/conf/server.xml
