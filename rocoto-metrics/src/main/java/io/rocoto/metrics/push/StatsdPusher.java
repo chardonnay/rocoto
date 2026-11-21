@@ -46,30 +46,26 @@ final class StatsdPusher extends MetricsPusher {
         List<String> lines = format.lines(families);
         InetAddress address = InetAddress.getByName(host);
         try (DatagramSocket socket = new DatagramSocket()) {
-            StringBuilder packet = new StringBuilder(maxPacketBytes);
+            byte[] packet = new byte[maxPacketBytes];
+            int used = 0;
             for (String line : lines) {
-                int size = line.getBytes(StandardCharsets.UTF_8).length;
-                if (size > maxPacketBytes) {
+                byte[] encoded = line.getBytes(StandardCharsets.UTF_8);
+                if (encoded.length > maxPacketBytes) {
                     continue; // a single line that does not fit would be truncated by the receiver
                 }
-                int current = packet.toString().getBytes(StandardCharsets.UTF_8).length;
-                if (current > 0 && current + 1 + size > maxPacketBytes) {
-                    send(socket, address, packet);
-                    packet.setLength(0);
+                if (used > 0 && used + 1 + encoded.length > maxPacketBytes) {
+                    socket.send(new DatagramPacket(packet, used, address, port));
+                    used = 0;
                 }
-                if (packet.length() > 0) {
-                    packet.append('\n');
+                if (used > 0) {
+                    packet[used++] = '\n';
                 }
-                packet.append(line);
+                System.arraycopy(encoded, 0, packet, used, encoded.length);
+                used += encoded.length;
             }
-            if (packet.length() > 0) {
-                send(socket, address, packet);
+            if (used > 0) {
+                socket.send(new DatagramPacket(packet, used, address, port));
             }
         }
-    }
-
-    private void send(DatagramSocket socket, InetAddress address, CharSequence packet) throws java.io.IOException {
-        byte[] data = packet.toString().getBytes(StandardCharsets.UTF_8);
-        socket.send(new DatagramPacket(data, data.length, address, port));
     }
 }

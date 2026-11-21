@@ -15,6 +15,8 @@ reads every value through the `RequestPipeline` with the scraper's identity:
 
 - A sample only appears if the identity may `search` the MBean and `read` the attribute.
 - An API token with an MBean scope only yields samples from MBeans inside the scope.
+- Rules that share an MBean search pattern reuse its result within the current scrape.
+- Masking applies to composite keys selected by `path` and to keys expanded into individual samples.
 - Denied, masked, missing, failing and non-numeric values are **skipped silently**. A restricted
   scraper gets a smaller, valid exposition - never an error and never a `403` for the whole scrape.
 - With `audit.reads: true` every sample read is an audit record. Leave it `false` on scraped
@@ -333,7 +335,7 @@ Settings every exporter understands: `enabled`, `intervalSeconds` (default 60, S
 |----------|-----------|-------|
 | `otlp` | HTTP POST, OTLP/JSON | `endpoint` must be `https` unless `allowInsecure: true`. Counters become monotonic cumulative sums. |
 | `graphite` | TCP, one connection per push | Plaintext protocol, optionally TLS (`tls: true`, trust from `tls.outbound`). |
-| `statsd` | UDP datagrams | Lines are packed into datagrams of at most `maxPacketBytes`. Counters are sent as the increment since the previous push (`\|c`); the first push only establishes the baseline, a smaller value is treated as a counter reset. |
+| `statsd` | UDP datagrams | Lines are packed into datagrams of at most `maxPacketBytes`. Counters send the increment since the previous collection (`\|c`). A new series or one absent from the previous collection establishes a fresh baseline. A smaller value on consecutive collections is a counter reset. |
 | `influx` | HTTP POST to the write API | Version 2: `/api/v2/write?org=&bucket=&precision=` with `Authorization: Token`. Version 1: `/write?db=&precision=` with optional Basic credentials. `url` must be `https` unless `allowInsecure: true`. |
 
 - Exporters have no HTTP request to take an identity from. Each runs as the internal identity

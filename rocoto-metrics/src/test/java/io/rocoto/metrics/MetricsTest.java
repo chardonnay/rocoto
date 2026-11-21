@@ -1,13 +1,18 @@
 package io.rocoto.metrics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
 import org.junit.jupiter.api.Test;
@@ -72,6 +77,52 @@ class MetricsTest {
         String text = TextFormat.write(collector.collect(ctx(scoped), pipeline), false);
         assertTrue(text.contains("jvm_threads_current"));
         assertFalse(text.contains("jvm_memory_heap_used_bytes"));
+    }
+
+    @Test
+    void discoversEachPatternOncePerScrape() {
+        AtomicInteger queries = new AtomicInteger();
+        MBeanServerConnection platform = ManagementFactory.getPlatformMBeanServer();
+        // Test spy: count discovery calls while all operations run on the real platform MBeanServer.
+        MBeanServerConnection counted = (MBeanServerConnection) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] { MBeanServerConnection.class }, (proxy, method, args) -> {
+                    if (method.getName().equals("queryNames")) {
+                        queries.incrementAndGet();
+                    }
+                    try {
+                        return method.invoke(platform, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
+        RequestPipeline countedPipeline = new RequestPipeline(new MBeanServerAccess(List.of(counted)),
+                AccessPolicy.secureDefault(), ValueMasker.fromConfig(Config.empty()), AuditLogger.fromConfig(Config.empty()));
+        List<MetricRule> rules = MetricProfiles.load(Config.empty(), "generic", null);
+        long patterns = rules.stream().map(MetricRule::mbean).distinct().count();
+        MetricsCollector collector = new MetricsCollector(rules);
+        CallContext reader = ctx(new RocotoIdentity("reader", Set.of(AccessPolicy.ROLE_READER), "token"));
+        for (int scrape = 1; scrape <= 2; scrape++) {
+            assertFalse(collector.collect(reader, countedPipeline).isEmpty());
+            assertEquals(scrape * patterns, queries.get());
+        }
+    }
+
+    @Test
+    void masksCompositeKeysInExplicitAndExpandedRules() {
+        RequestPipeline masked = new RequestPipeline(new MBeanServerAccess(List.of(ManagementFactory.getPlatformMBeanServer())),
+                AccessPolicy.secureDefault(), ValueMasker.fromConfig(ConfigLoader.parse("mask: [used]")),
+                AuditLogger.fromConfig(Config.empty()));
+        MetricsCollector collector = new MetricsCollector(MetricProfiles.parse(ConfigLoader.parse("""
+                rules:
+                  - { mbean: "java.lang:type=Memory", attribute: HeapMemoryUsage, path: used, name: explicit }
+                  - { mbean: "java.lang:type=Memory", attribute: HeapMemoryUsage, name: expanded }
+                """), "test"));
+        List<MetricFamily> families = collector.collect(
+                ctx(new RocotoIdentity("reader", Set.of(AccessPolicy.ROLE_READER), "token")), masked);
+        assertEquals(List.of("expanded"), families.stream().map(MetricFamily::name).toList());
+        String output = TextFormat.write(families, false);
+        assertTrue(output.contains("expanded{key=\"committed\"}"));
+        assertFalse(output.contains("key=\"used\""));
     }
 
     @Test

@@ -23,12 +23,16 @@ jobs:
           cache: maven
       - name: Build, unit tests and integration tests (embedded Tomcat)
         run: mvn -B -ntp verify
+      - name: Build the demo application for the server smoke tests
+        if: matrix.java == '17'
+        run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
       - name: Keep the artifacts for the server smoke tests
         if: matrix.java == '17'
         uses: actions/upload-artifact@v7
         with:
           name: rocoto
           path: |
+            examples/demo-app/target/demo-app.war
             rocoto-war/target/rocoto.war
             rocoto-tools/target/rocoto-tools.jar
             rocoto-undertow/target/rocoto-undertow-*-all.jar
@@ -73,8 +77,6 @@ jobs:
         with:
           name: rocoto
       - uses: docker/setup-qemu-action@v4
-      - name: Demo application
-        run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
       - name: Run
         run: ci/arch/arch-test.sh
 
@@ -102,8 +104,6 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: rocoto
-      - name: Demo application
-        run: mvn -B -ntp -q -f examples/demo-app/pom.xml package
       - name: Run
         run: ci/arch/arch-test.sh amd64
 
@@ -256,9 +256,7 @@ jobs:
         with:
           name: rocoto
       - name: Start examples/tomcat-builtin
-        run: |
-          mvn -B -ntp -q -f examples/demo-app/pom.xml package
-          make -C examples/tomcat-builtin up
+        run: make -C examples/tomcat-builtin up
       - name: test.ps1
         shell: pwsh
         run: ./examples/tomcat-builtin/test.ps1

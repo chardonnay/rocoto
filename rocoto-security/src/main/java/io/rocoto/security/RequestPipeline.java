@@ -55,6 +55,11 @@ public final class RequestPipeline {
         return ValueConverter.builder().maskedKey(masker::isMasked);
     }
 
+    /** Applies the same masking rules to individual keys read from a composite attribute. */
+    public boolean isMaskedKey(String key) {
+        return masker.isMasked(key);
+    }
+
     public AccessPolicy policy() {
         return policy;
     }

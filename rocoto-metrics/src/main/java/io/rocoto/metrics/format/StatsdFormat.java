@@ -20,10 +20,12 @@ import io.rocoto.metrics.MetricRule;
  */
 public final class StatsdFormat implements MetricFormat {
 
+    private record Series(String metric, Map<String, String> labels) {}
+
     private final String prefix;
     private final boolean dogstatsd;
     private final boolean counterDeltas;
-    private final Map<String, Double> previous = new HashMap<>();
+    private Map<Series, Double> previous = Map.of();
 
     /**
      * @param counterDeltas {@code true} (push): counters as {@code |c} deltas; {@code false}
@@ -59,6 +61,7 @@ public final class StatsdFormat implements MetricFormat {
     /** One StatsD line per entry; pushers pack them into datagrams. */
     public synchronized List<String> lines(List<MetricFamily> families) {
         List<String> lines = new ArrayList<>();
+        Map<Series, Double> current = counterDeltas ? new HashMap<>() : Map.of();
         for (MetricFamily f : families) {
             boolean counter = f.type() == MetricRule.Type.COUNTER && counterDeltas;
             for (MetricFamily.Sample s : f.samples()) {
@@ -69,8 +72,9 @@ public final class StatsdFormat implements MetricFormat {
                 String name = dogstatsd ? Names.prefix(prefix) + Names.segment(f.name()) : Names.path(prefix, f.name(), s.labels());
                 String tags = dogstatsd ? tags(s.labels()) : "";
                 if (counter) {
-                    String key = f.name() + s.labels();
-                    Double last = previous.put(key, v);
+                    Series series = new Series(f.name(), Map.copyOf(s.labels()));
+                    current.put(series, v);
+                    Double last = previous.get(series);
                     if (last == null) {
                         continue; // first sight: no baseline for a delta yet
                     }
@@ -86,6 +90,7 @@ public final class StatsdFormat implements MetricFormat {
                 }
             }
         }
+        previous = current;
         return lines;
     }
 

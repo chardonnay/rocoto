@@ -1,9 +1,11 @@
 package io.rocoto.metrics;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,8 +35,9 @@ public final class MetricsCollector {
 
     public List<MetricFamily> collect(CallContext ctx, RequestPipeline pipeline) {
         Map<String, MetricFamily> families = new LinkedHashMap<>();
+        Map<ObjectName, Set<ObjectName>> visibleNames = new HashMap<>();
         for (MetricRule rule : rules) {
-            for (ObjectName name : pipeline.search(ctx, rule.mbean())) {
+            for (ObjectName name : visibleNames.computeIfAbsent(rule.mbean(), pattern -> pipeline.search(ctx, pattern))) {
                 if (!pipeline.mayRead(ctx, name, rule.attribute())) {
                     continue;
                 }
@@ -49,22 +52,27 @@ public final class MetricsCollector {
                 }
                 MetricFamily family = families.computeIfAbsent(rule.name(),
                         n -> new MetricFamily(n, rule.type(), rule.help()));
-                addSamples(family, rule, name, value);
+                addSamples(family, rule, name, value, pipeline);
             }
         }
+        families.values().removeIf(family -> family.samples().isEmpty());
         return new ArrayList<>(families.values());
     }
 
-    private static void addSamples(MetricFamily family, MetricRule rule, ObjectName name, Object value) {
+    private static void addSamples(MetricFamily family, MetricRule rule, ObjectName name, Object value,
+            RequestPipeline pipeline) {
         Map<String, String> labels = labels(rule, name);
         if (value instanceof CompositeData cd) {
             if (rule.path() != null) {
-                if (cd.containsKey(rule.path())) {
+                if (cd.containsKey(rule.path()) && !pipeline.isMaskedKey(rule.path())) {
                     add(family, labels, cd.get(rule.path()), rule.scale());
                 }
                 return;
             }
             for (String key : cd.getCompositeType().keySet()) {
+                if (pipeline.isMaskedKey(key)) {
+                    continue;
+                }
                 Map<String, String> withKey = new LinkedHashMap<>(labels);
                 withKey.put("key", key);
                 add(family, withKey, cd.get(key), rule.scale());

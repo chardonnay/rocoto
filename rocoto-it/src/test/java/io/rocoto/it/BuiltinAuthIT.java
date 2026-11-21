@@ -156,6 +156,10 @@ class BuiltinAuthIT {
         assertEquals(404, server.get("/api/v1/mbeans/" + MEMORY + "/attributes/Nope", reader).statusCode());
         assertEquals(404, server.get("/api/v1/mbeans/nope%3Atype%3DNone", reader).statusCode());
         assertEquals(400, server.postJson("/api/v1/read", reader, "{not json").statusCode());
+        HttpResponse<String> outOfRange = server.postJson("/api/v1/read", reader,
+                "{\"mbean\":\"java.lang:type=Memory\",\"attribute\":\"Verbose\",\"extra\":1e2147483649}");
+        assertEquals(400, outOfRange.statusCode(), outOfRange.body());
+        assertTrue(outOfRange.body().contains("Decimal exponent out of range"), outOfRange.body());
     }
 
     @Test
