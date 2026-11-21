@@ -65,8 +65,8 @@ the hop between proxy and pod is unencrypted.
 ```sh
 # 0. Build the WAR (Rocoto is not on Maven Central) and the image; push it to your registry
 mvn install -DskipTests                         # in the repository root
-docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.0 .
-docker push registry.example.com/rocoto-tomcat:0.1.0
+docker build -f examples/kubernetes/image/Dockerfile -t registry.example.com/rocoto-tomcat:0.1.1 .
+docker push registry.example.com/rocoto-tomcat:0.1.1
 # then set the image name in manifests/30-deployment.yaml
 
 cd examples/kubernetes
@@ -103,7 +103,7 @@ curl -s --cacert tls.crt https://localhost:8443/rocoto/api/v1/health/live
 # {"status":"UP"}
 
 curl -s --cacert tls.crt -u ada:demo-password-123 https://localhost:8443/rocoto/api/v1/server
-# {"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{"adapter":"tomcat",...},
+# {"rocoto":{"version":"0.1.1","authMode":"builtin"},"server":{"adapter":"tomcat",...},
 #  "caller":{"name":"ada","roles":["rocoto-admin"],"authenticatedBy":"basic"}}
 
 curl -s --cacert tls.crt -H "Authorization: Bearer rct_prometheus_y7BJvUVB6oGbdKRNYXEgQ4YeKZ_MSEVIwUQuDmjmnLY" \

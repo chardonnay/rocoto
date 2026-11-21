@@ -7,6 +7,8 @@ keys or API details; such changes are listed under "Changed".
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-21
+
 ### Added
 
 - Output formats for the REST API: `?format=xml|yaml|toml|html|csv|text|table` or the `Accept`
@@ -88,5 +90,6 @@ on linux/arm64, linux/amd64 and macOS (Apple Silicon).
 - The artifacts are not on Maven Central; build locally with `mvn install` to use the adapter SPI
   or the embedded handlers as a dependency.
 
-[Unreleased]: https://github.com/chardonnay/rocoto/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/chardonnay/rocoto/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/chardonnay/rocoto/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/chardonnay/rocoto/releases/tag/v0.1.0

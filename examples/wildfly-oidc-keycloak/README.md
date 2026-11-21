@@ -51,7 +51,7 @@ TOKEN=$(./get-token.sh kate)
 
 # 2. Call Rocoto
 curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/rocoto/api/v1/server
-# {"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{"adapter":"wildfly",...},
+# {"rocoto":{"version":"0.1.1","authMode":"builtin"},"server":{"adapter":"wildfly",...},
 #  "caller":{"name":"kate","roles":[...,"rocoto-admin",...],"authenticatedBy":"jwt"}}
 
 # Both steps plus the decoded claims:

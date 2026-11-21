@@ -79,7 +79,7 @@ B=https://localhost:8443/rocoto
 
 curl -s --cacert wildfly-selfsigned.crt -u ada $B/api/v1/server
 # Enter host password for user 'ada':
-# {"rocoto":{"version":"0.1.0","authMode":"builtin"},
+# {"rocoto":{"version":"0.1.1","authMode":"builtin"},
 #  "server":{"adapter":"wildfly","product":"WildFly ...","version":"...","serverState":"running","launchType":"STANDALONE"},
 #  "caller":{"name":"ada","roles":["rocoto-admin"],"authenticatedBy":"basic"}}
 

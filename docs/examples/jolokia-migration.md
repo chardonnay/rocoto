@@ -187,7 +187,7 @@ only. Review the draft, widen `roles` where operators need an operation, and pas
 The smoke test (captured from an embedded Tomcat running `rocoto.war` and the demo application):
 
 ```text
-{"request":{"type":"version"},"value":{"agent":"rocoto-0.1.0","protocol":"7.2","info":{"product":"Apache Tomcat","vendor":"Rocoto","version":"Apache Tomcat/10.1.34"},"config":{"agentDescription":"Rocoto Jolokia compatibility","agentType":"servlet"}},"timestamp":1789761531,"status":200}
+{"request":{"type":"version"},"value":{"agent":"rocoto-0.1.1","protocol":"7.2","info":{"product":"Apache Tomcat","vendor":"Rocoto","version":"Apache Tomcat/10.1.34"},"config":{"agentDescription":"Rocoto Jolokia compatibility","agentType":"servlet"}},"timestamp":1789761531,"status":200}
 
 {"request":{"type":"read","mbean":"com.example.demo:type=Orders","attribute":"QueueDepth"},"value":2,"timestamp":1789761531,"status":200}
 

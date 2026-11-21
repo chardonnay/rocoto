@@ -301,12 +301,12 @@ curl -i $B/api/v1/server
 # {"status":401,"error":"Authentication required"}
 
 curl -s -u rita:demo-password-123 $B/api/v1/server
-# {"rocoto":{"version":"0.1.0","authMode":"builtin"},
+# {"rocoto":{"version":"0.1.1","authMode":"builtin"},
 #  "server":{"adapter":"tomcat","product":"Apache Tomcat","version":"Apache Tomcat/10.1.x","jmxDomain":"Catalina"},
 #  "caller":{"name":"rita","roles":["rocoto-reader"],"authenticatedBy":"basic"}}
 
 curl -s -u rita:demo-password-123 $B/api/v1/health
-# {"status":"WARN","version":"0.1.0","adapter":"tomcat","visibleMBeans":77,
+# {"status":"WARN","version":"0.1.1","adapter":"tomcat","visibleMBeans":77,
 #  "activeSubscriptions":0,"warnings":["auth.allowInsecureTransport is enabled"]}
 ```
 

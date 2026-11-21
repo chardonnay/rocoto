@@ -95,7 +95,7 @@ curl -s -u ada $ROCOTO/api/v1/server
 
 ```json
 {
-  "rocoto": { "version": "0.1.0", "authMode": "builtin" },
+  "rocoto": { "version": "0.1.1", "authMode": "builtin" },
   "server": {
     "adapter": "wildfly",
     "product": "WildFly",
@@ -121,7 +121,7 @@ sees for a login.
 ```json
 {
   "status": "WARN",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "adapter": "tomcat",
   "visibleMBeans": 187,
   "activeSubscriptions": 2,

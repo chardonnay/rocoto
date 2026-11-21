@@ -170,7 +170,7 @@ caller may not read do not appear. Notification metadata (`notif`) is not render
 {
   "request": { "type": "version" },
   "value": {
-    "agent": "rocoto-0.1.0",
+    "agent": "rocoto-0.1.1",
     "protocol": "7.2",
     "info": { "product": "WildFly", "vendor": "Rocoto", "version": "30.0.1.Final" },
     "config": { "agentType": "servlet", "agentDescription": "Rocoto Jolokia compatibility" }

@@ -54,7 +54,7 @@ Expected output (Java, abridged):
 
 ```text
 == who am I
-{"rocoto":{"version":"0.1.0","authMode":"builtin"},"server":{...},"caller":{"name":"otto","roles":["rocoto-operator"],"authenticatedBy":"basic"}}
+{"rocoto":{"version":"0.1.1","authMode":"builtin"},"server":{...},"caller":{"name":"otto","roles":["rocoto-operator"],"authenticatedBy":"basic"}}
 == read (RPC style, no escaping needed)
 {"mbean":"com.example.demo:type=Orders","values":{"OrdersProcessed":127,"QueueDepth":16}}
 == bulk: every item carries its own status
